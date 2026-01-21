@@ -18,7 +18,7 @@
 #include <string>
 #include <thread>
 
-#include <hardware_interface/version.h>
+// #include <hardware_interface/version.h>
 #include <controller_manager/controller_manager.hpp>
 #include <rclcpp/executors.hpp>
 #include <realtime_tools/realtime_helpers.hpp>
