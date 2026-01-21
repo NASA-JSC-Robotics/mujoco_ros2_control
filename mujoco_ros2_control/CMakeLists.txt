@@ -24,67 +24,66 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Attempt to find an install of mujoco, either the library itself, from the environment, or
 # as a last resort download the required tar file manually and unzip it into the workspace.
-find_package(mujoco QUIET)
-if(mujoco_FOUND)
-  message(STATUS "Mujoco build from source has been found")
-  set(MUJOCO_LIB mujoco::mujoco)
-  set(MUJOCO_INCLUDE_DIR ${MUJOCO_INCLUDE_DIR})
-  set(MUJOCO_SIMULATE_DIR ${MUJOCO_INCLUDE_DIR}/../simulate)
-elseif(DEFINED ENV{MUJOCO_INSTALL_DIR})
-  message(STATUS "Mujoco build from source has not been found. Attempting to find the binary in $ENV{MUJOCO_INSTALL_DIR} instead.")
-  set(MUJOCO_DIR $ENV{MUJOCO_INSTALL_DIR})
-  find_library(MUJOCO_LIB mujoco HINTS $ENV{MUJOCO_DIR}/lib)
-  if(NOT MUJOCO_LIB)
-    message(FATAL_ERROR "Failed to find binary in $ENV{MUJOCO_DIR}")
-  endif()
-  set(MUJOCO_INCLUDE_DIR $ENV{MUJOCO_DIR}/include)
-  set(MUJOCO_SIMULATE_DIR $ENV{MUJOCO_DIR}/simulate)
+# find_package(mujoco QUIET)
+# if(mujoco_FOUND)
+#   message(STATUS "Mujoco build from source has been found")
+#   set(MUJOCO_LIB mujoco::mujoco)
+#   set(MUJOCO_INCLUDE_DIR ${MUJOCO_INCLUDE_DIR})
+#   set(MUJOCO_SIMULATE_DIR ${MUJOCO_INCLUDE_DIR}/../simulate)
+# elseif(DEFINED ENV{MUJOCO_INSTALL_DIR})
+#   message(STATUS "Mujoco build from source has not been found. Attempting to find the binary in $ENV{MUJOCO_INSTALL_DIR} instead.")
+#   set(MUJOCO_DIR $ENV{MUJOCO_INSTALL_DIR})
+#   find_library(MUJOCO_LIB mujoco HINTS $ENV{MUJOCO_DIR}/lib)
+#   if(NOT MUJOCO_LIB)
+#     message(FATAL_ERROR "Failed to find binary in $ENV{MUJOCO_DIR}")
+#   endif()
+#   set(MUJOCO_INCLUDE_DIR $ENV{MUJOCO_DIR}/include)
+#   set(MUJOCO_SIMULATE_DIR $ENV{MUJOCO_DIR}/simulate)
+# else()
+include(FetchContent)
+
+# Detect architecture
+set(MUJOCO_VERSION "3.4.0")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+  set(CPU_ARCH "x86_64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+  set(CPU_ARCH "aarch64")
 else()
-  include(FetchContent)
-
-  # Detect architecture
-  set(MUJOCO_VERSION "3.4.0")
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
-    set(CPU_ARCH "x86_64")
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
-    set(CPU_ARCH "aarch64")
-  else()
-    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
-  endif()
-
-  message(STATUS "No MuJoCo installation found. Downloading MuJoCo ${MUJOCO_VERSION} for ${CPU_ARCH}.")
-
-  # Download the archive and put it next to the source directory
-  set(MUJOCO_DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mujoco)
-  set(MUJOCO_EXTRACT_DIR ${MUJOCO_DOWNLOAD_DIR}/mujoco-${MUJOCO_VERSION})
-  set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
-  FetchContent_Declare(
-    mujoco_download
-    SOURCE_DIR ${MUJOCO_EXTRACT_DIR}
-    DOWNLOAD_EXTRACT_TIMESTAMP True
-    URL https://github.com/google-deepmind/mujoco/releases/download/${MUJOCO_VERSION}/mujoco-${MUJOCO_VERSION}-linux-${CPU_ARCH}.tar.gz
-  )
-  FetchContent_MakeAvailable(mujoco_download)
-
-  set(MUJOCO_DIR ${MUJOCO_EXTRACT_DIR})
-  message(STATUS "MuJoCo downloaded to: ${MUJOCO_DIR}")
-
-  # Find the library in the downloaded location
-  find_library(MUJOCO_LIB mujoco HINTS ${MUJOCO_DIR}/lib NO_DEFAULT_PATH)
-  if(NOT MUJOCO_LIB)
-    message(FATAL_ERROR "Failed to find MuJoCo library in ${MUJOCO_DIR}/lib")
-  endif()
-
-  set(MUJOCO_INCLUDE_DIR ${MUJOCO_DIR}/include)
-  set(MUJOCO_SIMULATE_DIR ${MUJOCO_DIR}/simulate)
-
-  message(STATUS "Installing ${MUJOCO_LIB} to the install directory...")
-  install(
-    DIRECTORY ${MUJOCO_DIR}/lib/
-    DESTINATION lib
-    FILES_MATCHING PATTERN "libmujoco.so*"
-  )
+  message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
+
+message(STATUS "No MuJoCo installation found. Downloading MuJoCo ${MUJOCO_VERSION} for ${CPU_ARCH}.")
+
+# Download the archive and put it next to the source directory
+set(MUJOCO_DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mujoco)
+set(MUJOCO_EXTRACT_DIR ${MUJOCO_DOWNLOAD_DIR}/mujoco-${MUJOCO_VERSION})
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
+FetchContent_Declare(
+  mujoco_download
+  SOURCE_DIR ${MUJOCO_EXTRACT_DIR}
+  DOWNLOAD_EXTRACT_TIMESTAMP True
+  URL https://github.com/google-deepmind/mujoco/releases/download/${MUJOCO_VERSION}/mujoco-${MUJOCO_VERSION}-linux-${CPU_ARCH}.tar.gz
+)
+FetchContent_MakeAvailable(mujoco_download)
+
+set(MUJOCO_DIR ${MUJOCO_EXTRACT_DIR})
+message(STATUS "MuJoCo downloaded to: ${MUJOCO_DIR}")
+
+# Find the library in the downloaded location
+find_library(MUJOCO_LIB mujoco HINTS ${MUJOCO_DIR}/lib NO_DEFAULT_PATH)
+if(NOT MUJOCO_LIB)
+  message(FATAL_ERROR "Failed to find MuJoCo library in ${MUJOCO_DIR}/lib")
+endif()
+
+set(MUJOCO_INCLUDE_DIR ${MUJOCO_DIR}/include)
+set(MUJOCO_SIMULATE_DIR ${MUJOCO_DIR}/simulate)
+
+message(STATUS "Installing ${MUJOCO_LIB} to the install directory...")
+install(
+  DIRECTORY ${MUJOCO_DIR}/lib/
+  DESTINATION lib
+  FILES_MATCHING PATTERN "libmujoco.so*"
+)
 
 # Fetch lodepng dependency.
 if(NOT TARGET lodepng)
@@ -166,23 +165,23 @@ set_target_properties(mujoco_ros2_control PROPERTIES
 )
 target_link_libraries(mujoco_ros2_control
   ${MUJOCO_LIB}
-  ${sensor_msgs_TARGETS}
   mujoco::libsimulate
-  controller_manager::controller_manager
-  hardware_interface::hardware_interface
-  hardware_interface::mock_components
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  control_toolbox::control_toolbox
-  ${nav_msgs_TARGETS}
-  ${sensor_msgs_TARGETS}
-  ${mujoco_ros2_control_msgs_TARGETS}
-  transmission_interface::transmission_interface
-  Eigen3::Eigen
-  Threads::Threads
   lodepng
   glfw
+  Eigen3::Eigen
+  Threads::Threads
+)
+ament_target_dependencies(mujoco_ros2_control
+  controller_manager
+  hardware_interface
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  control_toolbox
+  sensor_msgs
+  transmission_interface
+  mujoco_ros2_control_msgs
+  nav_msgs
 )
 target_include_directories(mujoco_ros2_control PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -199,8 +198,8 @@ install(TARGETS mujoco_ros2_control
 
 # Install the ROS 2 control node
 add_executable(ros2_control_node src/mujoco_ros2_control_node.cpp)
-target_link_libraries(ros2_control_node PUBLIC
-  controller_manager::controller_manager
+ament_target_dependencies(ros2_control_node
+  controller_manager
 )
 install(
   TARGETS ros2_control_node
