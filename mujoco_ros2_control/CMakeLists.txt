@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(mujoco_ros2_control)
 
-find_package(ros2_control_cmake REQUIRED)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -148,10 +150,6 @@ target_sources(
 target_include_directories(libsimulate PUBLIC ${MUJOCO_SIMULATE_DIR} ${MUJOCO_INCLUDE_DIR})
 target_link_libraries(libsimulate PUBLIC lodepng mujoco::platform_ui_adapter ${MUJOCO_LIB})
 target_compile_options(libsimulate PRIVATE ${MUJOCO_SILENCE_COMPILER_WARNINGS})
-
-# We set these after creating the targets to avoid propagating them to other third-party targets
-set_compiler_options()
-export_windows_symbols()
 
 # Mujoco ROS 2 control system interface (this package)
 add_library(mujoco_ros2_control SHARED
