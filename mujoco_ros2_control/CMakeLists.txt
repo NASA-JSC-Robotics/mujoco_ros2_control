@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(mujoco_ros2_control)
 
-find_package(ros2_control_cmake REQUIRED)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -101,10 +103,6 @@ target_include_directories(libsimulate PUBLIC ${MUJOCO_SIMULATE_DIR} ${MUJOCO_IN
 target_link_libraries(libsimulate PRIVATE lodepng mujoco::platform_ui_adapter ${MUJOCO_LIB})
 target_compile_options(libsimulate PRIVATE ${MUJOCO_SILENCE_COMPILER_WARNINGS})
 
-# We set these after creating the targets to avoid propagating them to other third-party targets
-set_compiler_options()
-export_windows_symbols()
-
 # Mujoco ROS 2 control system interface (this package)
 add_library(mujoco_ros2_control SHARED
     src/mujoco_system_interface.cpp
@@ -127,22 +125,24 @@ target_link_options(mujoco_ros2_control PUBLIC
 )
 target_link_libraries(mujoco_ros2_control
 PUBLIC
-  hardware_interface::hardware_interface
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${nav_msgs_TARGETS}
   ${sensor_msgs_TARGETS}
   ${mujoco_ros2_control_msgs_TARGETS}
-  transmission_interface::transmission_interface
-  pluginlib::pluginlib
   ${MUJOCO_LIB}
-  control_toolbox::control_toolbox
   Eigen3::Eigen
 PRIVATE
   mujoco::libsimulate
   Threads::Threads
   lodepng
   glfw
+)
+ament_target_dependencies(mujoco_ros2_control PUBLIC
+  hardware_interface
+  rclcpp
+  rclcpp_lifecycle
+  transmission_interface
+  pluginlib
+  control_toolbox
 )
 target_include_directories(mujoco_ros2_control PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -173,8 +173,8 @@ install(DIRECTORY include/ DESTINATION include)
 
 # Install the ROS 2 control node
 add_executable(ros2_control_node src/mujoco_ros2_control_node.cpp)
-target_link_libraries(ros2_control_node PUBLIC
-  controller_manager::controller_manager
+ament_target_dependencies(ros2_control_node PUBLIC
+  controller_manager
 )
 install(
   TARGETS ros2_control_node
@@ -202,4 +202,13 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  hardware_interface
+  rclcpp
+  rclcpp_lifecycle
+  transmission_interface
+  pluginlib
+  control_toolbox
+  controller_manager
+)
 ament_package()
