@@ -21,7 +21,7 @@
 #include <fstream>
 #include <thread>
 
-#include <hardware_interface/version.h>
+// #include <hardware_interface/version.h>
 #include <hardware_interface/hardware_info.hpp>
 #include <mujoco_ros2_control/mujoco_system_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
