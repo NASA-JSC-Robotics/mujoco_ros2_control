@@ -13,13 +13,13 @@
       </default>
     </default>
 
-    <sensor>
+    <!--sensor>
       <rangefinder name="lidar" site="rf" />
-    </sensor>
+    </sensor-->
   </raw_inputs>
 
   <!-- Specific inputs that require processing from the conversion script-->
-  <processed_inputs>
+  <!--processed_inputs-->
     <!-- Specifying decompose_mesh will set the `decompose` flag when using obj2mjcf -->
     <!-- <decompose_mesh mesh_name="forearm" threshold="0.05"/> -->
 
@@ -32,7 +32,7 @@
     <!-- frame. This tag will create rangefinders in the MJCF between min_angle and max_angle at each -->
     <!-- angle_increment rotated about the replicate frame's Y axis. The hardware intercface then combines -->
     <!-- them into a single LaserScan message. -->
-    <lidar ref_site="lidar_sensor_frame" sensor_name="rf" min_angle="-0.3" max_angle="0.3" angle_increment="0.025" />
+    <!--lidar ref_site="lidar_sensor_frame" sensor_name="lidar_sensor_frame" min_angle="-0.3" max_angle="0.3" angle_increment="0.025" /-->
 
     <!-- The element with the type and name as listed below will be modified with the remaining attributes -->
     <!-- If the attribute already existed, it will be overwritten -->
@@ -41,5 +41,5 @@
     <modify_element type="joint" name="joint1" frictionloss="1.0" damping="2.0"/>
     <modify_element type="body" name="forearm" gravcomp="1.0"/>
   -->
-  </processed_inputs>
+  <!--/processed_inputs-->
 </mujoco_inputs>

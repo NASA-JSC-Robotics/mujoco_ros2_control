@@ -136,25 +136,15 @@ public:
   ~HeadlessAdapter() override = default;
 
   std::pair<double, double> GetCursorPosition() const override
-  {
-    return { 0.0, 0.0 };
-  }
+  { return { 0.0, 0.0 }; }
   double GetDisplayPixelsPerInch() const override
-  {
-    return 96.0;
-  }
+  { return 96.0; }
   std::pair<int, int> GetFramebufferSize() const override
-  {
-    return { 800, 600 };
-  }
+  { return { 800, 600 }; }
   std::pair<int, int> GetWindowSize() const override
-  {
-    return { 800, 600 };
-  }
+  { return { 800, 600 }; }
   bool IsGPUAccelerated() const override
-  {
-    return false;
-  }
+  { return false; }
   void PollEvents() override
   {
   }
@@ -168,9 +158,7 @@ public:
   {
   }
   bool ShouldCloseWindow() const override
-  {
-    return false;
-  }
+  { return false; }
   void SwapBuffers() override
   {
   }
@@ -179,53 +167,31 @@ public:
   }
 
   bool IsLeftMouseButtonPressed() const override
-  {
-    return false;
-  }
+  { return false; }
   bool IsMiddleMouseButtonPressed() const override
-  {
-    return false;
-  }
+  { return false; }
   bool IsRightMouseButtonPressed() const override
-  {
-    return false;
-  }
+  { return false; }
 
   bool IsAltKeyPressed() const override
-  {
-    return false;
-  }
+  { return false; }
   bool IsCtrlKeyPressed() const override
-  {
-    return false;
-  }
+  { return false; }
   bool IsShiftKeyPressed() const override
-  {
-    return false;
-  }
+  { return false; }
 
   bool IsMouseButtonDownEvent(int /*act*/) const override
-  {
-    return false;
-  }
+  { return false; }
   bool IsKeyDownEvent(int /*act*/) const override
-  {
-    return false;
-  }
+  { return false; }
 
   int TranslateKeyCode(int /*key*/) const override
-  {
-    return 0;
-  }
+  { return 0; }
   mjtButton TranslateMouseButton(int /*button*/) const override
-  {
-    return mjBUTTON_NONE;
-  }
+  { return mjBUTTON_NONE; }
 
   bool RefreshMjrContext(const mjModel* /*m*/, int /*fontscale*/) override
-  {
-    return false;
-  }
+  { return false; }
 };
 
 /**
@@ -275,9 +241,7 @@ private:
 
 // Clamps v to the lo or high value
 double clamp(double v, double lo, double hi)
-{
-  return (v < lo) ? lo : (hi < v) ? hi : v;
-}
+{ return (v < lo) ? lo : (hi < v) ? hi : v; }
 
 // return the path to the directory containing the current executable
 // used to determine the location of auto-loaded plugin libraries
@@ -678,10 +642,10 @@ MujocoSystemInterface::~MujocoSystemInterface()
   }
 
   // Stop lidar sensor loop
-  if (lidar_sensors_)
-  {
-    lidar_sensors_->close();
-  }
+  //  if (lidar_sensors_)
+  //  {
+  //    lidar_sensors_->close();
+  //  }
 
   // If sim_ is created and running, clean shut it down
   // We do this first to ensure that no other threads are accessing the model/data
@@ -743,6 +707,13 @@ MujocoSystemInterface::on_init(const hardware_interface::HardwareInfo& params)
 MujocoSystemInterface::on_init(const hardware_interface::HardwareComponentInterfaceParams& params)
 #endif
 {
+  std::string pluginPath = "/usr/local/bin/mujoco_plugin";
+  if (std::getenv("MUJOCO_PLUGIN_PATH"))
+  {
+    pluginPath = std::string(std::getenv("MUJOCO_PLUGIN_PATH"));
+  }
+  mj_loadAllPluginLibraries(pluginPath.c_str(), nullptr);
+  scanPluginLibraries();
   if (hardware_interface::SystemInterface::on_init(params) != hardware_interface::CallbackReturn::SUCCESS)
   {
     return hardware_interface::CallbackReturn::ERROR;
@@ -1089,13 +1060,14 @@ MujocoSystemInterface::on_init(const hardware_interface::HardwareComponentInterf
   cameras_->register_cameras(get_hardware_info());
 
   // Configure Lidar sensors
-  RCLCPP_INFO(get_logger(), "Initializing lidar...");
-  lidar_sensors_ = std::make_unique<MujocoLidar>(get_node(), sim_mutex_, mj_data_, mj_model_, lidar_publish_rate);
-  if (!lidar_sensors_->register_lidar(get_hardware_info()))
-  {
-    RCLCPP_INFO(get_logger(), "Failed to initialize lidar, exiting...");
-    return hardware_interface::CallbackReturn::FAILURE;
-  }
+  // RCLCPP_INFO(get_logger(), "Initializing lidar...%d", mj_model_->nsensor);
+  // fflush(stdout);
+  // lidar_sensors_ = std::make_unique<MujocoLidar>(get_node(), sim_mutex_, mj_data_, mj_model_, lidar_publish_rate);
+  // if (!lidar_sensors_->register_lidar(get_hardware_info()))
+  // {
+  //   RCLCPP_INFO(get_logger(), "Failed to initialize lidar, exiting...");
+  //   return hardware_interface::CallbackReturn::FAILURE;
+  // }
 
   // Disable the rangefinder flag at startup so that we don't get the yellow lines.
   // We can still turn this on manually if desired.
@@ -1348,7 +1320,7 @@ hardware_interface::CallbackReturn MujocoSystemInterface::on_activate(const rclc
 
   // Start camera and sensor rendering loops
   cameras_->init();
-  lidar_sensors_->init();
+  //  lidar_sensors_->init();
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -3164,14 +3136,10 @@ void MujocoSystemInterface::set_data(mjData* mj_data)
 }
 
 rclcpp::Logger MujocoSystemInterface::get_logger() const
-{
-  return logger_;
-}
+{ return logger_; }
 
 rclcpp::Node::SharedPtr MujocoSystemInterface::get_node() const
-{
-  return mujoco_node_;
-}
+{ return mujoco_node_; }
 
 void MujocoSystemInterface::load_mujoco_plugins()
 {

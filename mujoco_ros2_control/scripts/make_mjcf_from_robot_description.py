@@ -297,7 +297,7 @@ def fix_mujoco_description(
     decompose_dict,
     cameras_dict,
     modify_element_dict,
-    lidar_dict,
+#    lidar_dict,
     request_add_free_joint,
 ):
     """
@@ -334,7 +334,7 @@ def fix_mujoco_description(
     dom = mrc.add_cameras_from_sites(dom, cameras_dict)
 
     # Add replicates based on site names
-    dom = mrc.add_lidar_from_sites(dom, lidar_dict)
+#    dom = mrc.add_lidar_from_sites(dom, lidar_dict)
 
     # modify elements based on modify_element tags
     dom = mrc.add_modifiers(dom, modify_element_dict)
@@ -462,7 +462,7 @@ def main(args=None):
         mrc.write_mujoco_scene(scene_inputs, output_filepath)
         scene_inputs = None
 
-    decompose_dict, cameras_dict, modify_element_dict, lidar_dict = mrc.get_processed_mujoco_inputs(processed_inputs)
+ #   decompose_dict, cameras_dict, modify_element_dict, lidar_dict = mrc.get_processed_mujoco_inputs(processed_inputs)
 
     if parsed_args.asset_dir:
         assets_filepath = parsed_args.asset_dir
@@ -510,7 +510,7 @@ def main(args=None):
         decompose_dict,
         cameras_dict,
         modify_element_dict,
-        lidar_dict,
+#        lidar_dict,
         request_add_free_joint,
     )
 

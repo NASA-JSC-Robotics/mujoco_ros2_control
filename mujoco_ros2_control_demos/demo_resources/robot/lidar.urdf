@@ -69,9 +69,9 @@
             </default>
           </default>
 
-          <sensor>
+          <!--sensor>
             <rangefinder name="lidar" site="rf" />
-          </sensor>
+          </sensor-->
         </raw_inputs>
 
         <!-- Specific inputs that require processing from the conversion script-->
@@ -85,8 +85,8 @@
           <!-- angle_increment rotated about the replicate frame's Y axis. The hardware intercface
           then combines -->
           <!-- them into a single LaserScan message. -->
-          <lidar ref_site="lidar_sensor_frame" sensor_name="rf" min_angle="-0.3" max_angle="0.3"
-            angle_increment="0.025" />
+          <!--lidar ref_site="lidar_sensor_frame" sensor_name="rf" min_angle="-0.3" max_angle="0.3"
+            angle_increment="0.025" /-->
 
         </processed_inputs>
 
@@ -122,16 +122,16 @@
   <ros2_control name="MujocoSystem" type="system">
     <hardware>
       <plugin>mujoco_ros2_control/MujocoSystemInterface</plugin>
-
+      <param name="mujoco_model">$(find mujoco_ros2_control_demos)/demo_resources/scenes/lidar_scene.xml</param>
       <!-- Conditional mujoco_model parameter based on use_pid -->
-      <xacro:if value="$(arg use_pid)">
+      <!--<xacro:if value="$(arg use_pid)">
         <param name="pids_config_file">$(find mujoco_ros2_control_demos)/config/mujoco_pid.yaml</param>
       </xacro:if>
 
       <xacro:unless value="$(arg use_mjcf_from_topic)">
         <xacro:if value="$(arg use_pid)">
           <param name="mujoco_model">
-            $(find mujoco_ros2_control_demos)/demo_resources/scenes/scene_pid.xml
+            $(find mujoco_ros2_control_demos)/demo_resources/scenes/lidar_scene_pid.xml
           </param>
         </xacro:if>
 
@@ -139,7 +139,7 @@
           <param name="mujoco_model">$(find
             mujoco_ros2_control_demos)/demo_resources/scenes/lidar_scene.xml</param>
         </xacro:unless>
-      </xacro:unless>
+      </xacro:unless>-->
 
       <!-- Override the slowdown settings in the Simulate App and run at 3x speed -->
       <param name="sim_speed_factor">1.0</param>
@@ -156,7 +156,7 @@
     rangefinders -->
     <!-- and will generally be of the form "<sensor_name>-01". These parameters should line up with -->
     <!-- those documented in the laserscan message. -->
-    <sensor name="lidar">
+    <!--sensor name="lidar_1">
       <param name="frame_name">lidar_sensor_frame</param>
       <param name="angle_increment">0.025</param>
       <param name="min_angle">-0.3</param>
@@ -164,6 +164,6 @@
       <param name="range_min">0.05</param>
       <param name="range_max">10</param>
       <param name="laserscan_topic">/scan</param>
-    </sensor>
+    </sensor-->
   </ros2_control>
 </robot>

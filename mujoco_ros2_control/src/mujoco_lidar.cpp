@@ -123,6 +123,37 @@ MujocoLidar::MujocoLidar(rclcpp::Node::SharedPtr node, std::recursive_mutex* sim
 
 bool MujocoLidar::register_lidar(const hardware_interface::HardwareInfo& hardware_info)
 {
+    printf("***************************************************************************\n");
+    printf("Registering  Lidar\n");
+    fflush(stdout);
+/*
+    if(mj_model_ == nullptr)
+    { 
+      printf("Model not set\n");
+      printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+    
+      fflush(stdout);
+      return(true);
+    }
+    mju_error("Registering  Lidar %d sensors found", mj_model_->nsensor);
+
+    for(int i = 0; i < mj_model_->nsensor; ++i)
+  {
+    // Skip non-rangefinder sensors.
+    if (mj_model_->sensor_type[i] != mjtSensor::mjSENS_PLUGIN)
+    {
+      mju_error("sensor type %d is %d",i, mj_model_->sensor_type[i]);
+      continue;
+    }
+  
+
+    mju_error("found one");
+    const auto sensor_name_maybe = mj_id2name(mj_model_, mjtObj::mjOBJ_SENSOR, i);
+    mju_error("named %s", sensor_name_maybe);
+
+    mju_error("***************************************************************************");
+  }
+    
   lidar_sensors_.resize(0);
 
   // Iterate over sensors and identify the rangefinders, then attempt to match them to
@@ -205,7 +236,7 @@ bool MujocoLidar::register_lidar(const hardware_interface::HardwareInfo& hardwar
       RCLCPP_DEBUG(node_->get_logger(), "  sensor_indexes[%zu] = %d", j, lidar.sensor_indexes[j]);
     }
   }
-
+*/
   return true;
 }
 
@@ -247,7 +278,9 @@ void MujocoLidar::update()
     std::unique_lock<std::recursive_mutex> lock(*sim_mutex_);
     std::memcpy(mj_lidar_data_.data(), mj_data_->sensordata, mj_lidar_data_.size() * sizeof(mjtNum));
   }
-
+  printf("MujocoLidar::%s data size = %ld *****************************\n", __FUNCTION__, mj_lidar_data_.size());
+  fflush(stdout);
+/*
   // Step 2: Copy sensor information for lidar to the relevant containers, filtering as needed
   // TODO: This could be more efficient if we made assumptions about sensor data for a specific lidar
   //       sensor being contiguous in sensordata. However, we haven't noted any issues with this
@@ -275,7 +308,7 @@ void MujocoLidar::update()
   {
     lidar.laser_scan_msg.header.stamp = node_->now();
     lidar.scan_pub->publish(lidar.laser_scan_msg);
-  }
+  }*/
 }
 
 }  // namespace mujoco_ros2_control

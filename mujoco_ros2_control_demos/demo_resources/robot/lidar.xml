@@ -1,26 +1,35 @@
 <mujoco model="two_dof_robot">
-  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
-  <worldbody>    <site name="world" pos="0 0 0" quat="1.0 0 0 0"/>
-    <!--site name="base" pos="0 0 0" quat="1.0 0 0 0"/-->
-    <site name="lidar_sensor_frame" pos="1.0 2.0 0" quat="0.7071054825112363 0 0 -0.7071080798594737"/>
-    <body name="lidar_sensor_frame_lidar_body" pos="1.0 2.0 0" quat="0.6991665401770936 0.6991665401770936 -0.10567000093116563 -0.10567000093116563">
-      <replicate site="lidar_sensor_frame" count="24" sep="-" offset="0 0 0" euler="0 0.025 0">
-        <site name="rf" pos="0.0 0.0 0.0" quat="0.0 0.0 0.0 1.0"/>
-      </replicate>
-    </body>
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/" />
+  <extension>
+    <plugin plugin="mujoco.plugin.lidar">
+      <instance name="lidar_1">
+        <config key="size" value="24 1" />
+        <config key="fov" value=".6 0.0" />
+        <config key="max_range" value="13.0" />
+      </instance>
+    </plugin>
+  </extension>
+
+  <worldbody>
+   
+    <body name="lidar_mount" pos="0 0 0.5">
+            <inertial mass="1.0" pos="0 0 0" diaginertia="0.001 0.001 0.001"></inertial>
+            <geom type="cylinder" size="0.05 0.05" mass="1" pos="0 0 0" />
+            <site name="lidar_sensor_frame" pos="0 0 .15"/>
+        </body>
   </worldbody>
-  <option integrator="implicitfast"/>
+  <option integrator="implicitfast" />
   <default>
     <default class="visual">
-      <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+      <geom group="2" type="mesh" contype="0" conaffinity="0" />
     </default>
     <default class="collision">
-      <geom group="3" type="mesh"/>
+      <geom group="3" type="mesh" />
     </default>
   </default>
-  
+
   <sensor>
-    <rangefinder name="lidar" site="rf"/>
+    <plugin name="lidar_1" instance="lidar_1" objtype="site" objname="lidar_sensor_frame"/>
   </sensor>
-  
+
 </mujoco>
