@@ -1,6 +1,6 @@
 <mujoco model="two_dof_robot">
   <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
-  
+
   <extension>
   <plugin plugin="mujoco.plugin.lidar">
       <instance name="hokuyo">

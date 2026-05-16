@@ -73,7 +73,7 @@ public:
    * @param lidar_publish_rate The rate to publish all camera images, for now all images are published at the same rate.
    */
   explicit Mujoco3dLidar(rclcpp::Node::SharedPtr node, std::recursive_mutex* sim_mutex, mjData* mujoco_data,
-                       mjModel* mujoco_model, double lidar_publish_rate);
+                         mjModel* mujoco_model, double lidar_publish_rate);
 
   /**
    * @brief Starts the lidar processing thread in the background.

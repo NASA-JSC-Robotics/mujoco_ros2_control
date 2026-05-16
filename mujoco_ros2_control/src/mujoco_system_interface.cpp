@@ -252,7 +252,7 @@ MujocoSystemInterface::~MujocoSystemInterface()
     lidar_sensors_->close();
   }
 
-  if(lidar_3d_sensors_)
+  if (lidar_3d_sensors_)
   {
     lidar_3d_sensors_->close();
   }
@@ -492,12 +492,12 @@ MujocoSystemInterface::on_init(const hardware_interface::HardwareComponentInterf
   {
     RCLCPP_INFO(get_logger(), "No rangefinder lidars found");
   }
-  
+
   // configure 3d lidar sensors
-  
+
   RCLCPP_INFO(get_logger(), "Initializing 3d lidar...");
   lidar_3d_sensors_ = std::make_unique<Mujoco3dLidar>(get_node(), &simulation_->mutex(), simulation_->data(),
-                                                 simulation_->model(), lidar_3d_publish_rate);
+                                                      simulation_->model(), lidar_3d_publish_rate);
   if (!lidar_3d_sensors_->register_lidars(get_hardware_info()))
   {
     RCLCPP_INFO(get_logger(), "No 3d lidar sensor found");
