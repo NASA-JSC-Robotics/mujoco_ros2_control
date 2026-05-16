@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 project(mujoco_ros2_control)
 
@@ -30,6 +30,7 @@ find_package(TinyXML2 REQUIRED)
 find_package(mujoco_vendor REQUIRED)
 set(MUJOCO_LIB mujoco::mujoco)
 
+
 # The vendor package may be installed in different locations depending on if it
 # was installed with apt vs pixi. So resolve the install root and use that to
 # locate the relevant header files for this project.
@@ -47,6 +48,7 @@ endif()
 # So downstream packages that include our headers can find glfw_adapter.h etc.
 set(MUJOCO_INSTALL_INCLUDE_DIR "${MUJOCO_INCLUDE_DIR}")
 set(MUJOCO_INSTALL_SIMULATE_DIR "${MUJOCO_SIMULATE_DIR}")
+
 
 # Fetch lodepng dependency, if not available
 find_package(lodepng QUIET)
