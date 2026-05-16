@@ -18,10 +18,79 @@
  */
 
 #include "mujoco_ros2_control/mujoco_3d_lidar.hpp"
+#include <limits>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/point_field.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 #include "mujoco_ros2_control/utils.hpp"
 
 namespace mujoco_ros2_control
 {
+
+// Evenly spaced numbers over a specified interval.
+void LinSpace(float lower, float upper, int n, std::vector<float>& array)
+{
+  if (static_cast<int>(array.size()) < n)
+  {
+    array.resize(n);
+  }
+  float increment = n > 1 ? (upper - lower) / static_cast<float>(n - 1) : 0.0F;
+  for (int i = 0; i < n; ++i)
+  {
+    array[i] = lower;
+    lower += increment;
+  }
+}
+
+void ComputeVectors(Lidar3dConfig& lidar)
+{
+  lidar.vectors.clear();
+  lidar.vectors.reserve(lidar.resolution[0] * lidar.resolution[1]);
+  std::vector<float> azmuthAngles(lidar.resolution[0]);
+  std::vector<float> elevationAngles(lidar.resolution[1]);
+
+  if (lidar.resolution[0] > 1)
+  {
+    LinSpace(static_cast<float>(lidar.azimuth_range[0]), static_cast<float>(lidar.azimuth_range[1]),
+             lidar.resolution[0], azmuthAngles);
+  }
+  else
+  {
+    azmuthAngles.push_back(0.0);
+  }
+  if (lidar.resolution[1] > 1)
+  {
+    LinSpace(static_cast<float>(lidar.elevation_range[0]), static_cast<float>(lidar.elevation_range[1]),
+             lidar.resolution[1], elevationAngles);
+  }
+  else
+  {
+    elevationAngles.push_back(static_cast<float>(lidar.elevation_range[0]));
+  }
+
+  for (int32_t e = 0; e < lidar.resolution[1]; ++e)
+  {
+    for (int32_t a = 0; a < lidar.resolution[0]; ++a)
+    {
+      geometry_msgs::msg::Vector3 vec;
+      vec.x = (std::cos(azmuthAngles[a]) * std::cos(elevationAngles[e]));
+      vec.y = (std::sin(azmuthAngles[a]) * std::cos(elevationAngles[e]));
+      vec.z = (std::sin(elevationAngles[e]));
+      lidar.vectors.push_back(vec);
+    }
+  }
+}
+
+bool IsBigEndian(void)
+{
+  union
+  {
+    uint32_t i;
+    char c[4];
+  } bint = { 0x01020304 };
+
+  return bint.c[0] == 1;
+}
 
 // Checks that a plugin config attribute exists.
 bool CheckAttr(const std::string& input)
@@ -44,7 +113,6 @@ void ReadVector(std::vector<T>& output, const std::string& input)
   while (getline(ss, item, delim))
   {
     CheckAttr(item);
-    printf("Item : %s\n", item.c_str());
     output.push_back(strtod(item.c_str(), nullptr));
   }
 }
@@ -71,7 +139,7 @@ std::optional<Lidar3dConfig> get_lidar_config(const hardware_interface::Hardware
   };
 
   std::optional<std::string> frame_name = get_parameter("frame_name");
-  std::optional<std::string> laserscan_topic = get_parameter("laserscan_topic");
+  std::optional<std::string> lidar_topic = get_parameter("lidar_topic");
 
   // resolution
   int resolution[2] = { 1, 1 };
@@ -87,13 +155,11 @@ std::optional<Lidar3dConfig> get_lidar_config(const hardware_interface::Hardware
   {
     fprintf(stderr, "Both horizontal and vertical resolutions must be specified");
     return std::nullopt;
-    ;
   }
   if (resolution[0] <= 0 || resolution[1] <= 0)
   {
     fprintf(stderr, "Horizontal and vertical resolutions must be positive %d , %d\n", resolution[0], resolution[1]);
     return std::nullopt;
-    ;
   }
 
   // horizontal field of view
@@ -200,13 +266,11 @@ std::optional<Lidar3dConfig> get_lidar_config(const hardware_interface::Hardware
 
   if (max_range <= min_range)
   {
-    fprintf(stderr, "Lidar max range must be less than min range\n");
     return std::nullopt;
   }
 
   if (!frame_name.has_value())
   {
-    fprintf(stderr, "Frame name must be specified\n");
     return std::nullopt;
   }
 
@@ -220,8 +284,34 @@ std::optional<Lidar3dConfig> get_lidar_config(const hardware_interface::Hardware
   lidar_sensor.range_max = max_range;
 
   if (lidar_sensor.resolution[1] <= 1)
+    lidar_sensor.is_3d = false;
+  else
+    lidar_sensor.is_3d = true;
+
+  if (lidar_sensor.is_3d)
   {
-    lidar_sensor.laserscan_topic = laserscan_topic.has_value() ? laserscan_topic.value() : "/scan";
+    lidar_sensor.lidar_topic = lidar_topic.has_value() ? lidar_topic.value() : "/points";
+
+    ComputeVectors(lidar_sensor);
+    sensor_msgs::PointCloud2Modifier modifier(lidar_sensor.point_cloud_msg);
+
+    modifier.setPointCloud2Fields(3, "x", 1, sensor_msgs::msg::PointField::FLOAT32, "y", 1,
+                                  sensor_msgs::msg::PointField::FLOAT32, "z", 1, sensor_msgs::msg::PointField::FLOAT32);
+
+    lidar_sensor.lidar_topic = lidar_topic.has_value() ? lidar_topic.value() : "/points";
+    lidar_sensor.point_cloud_msg.header.frame_id = lidar_sensor.frame_name;
+    lidar_sensor.point_cloud_msg.width = resolution[0];
+    lidar_sensor.point_cloud_msg.height = resolution[1];
+    lidar_sensor.point_cloud_msg.point_step = 12;  // Length of a point in bytes
+    lidar_sensor.point_cloud_msg.is_bigendian = IsBigEndian();
+    lidar_sensor.point_cloud_msg.is_dense = false;
+    lidar_sensor.point_cloud_msg.row_step = lidar_sensor.point_cloud_msg.point_step *
+                                            lidar_sensor.point_cloud_msg.width * lidar_sensor.point_cloud_msg.height;
+    lidar_sensor.point_cloud_msg.data.resize(lidar_sensor.point_cloud_msg.row_step);
+  }
+  else
+  {
+    lidar_sensor.lidar_topic = lidar_topic.has_value() ? lidar_topic.value() : "/scan";
 
     float angle_increment = static_cast<float>(lidar_sensor.azimuth_range[1] - lidar_sensor.azimuth_range[0]) /
                             static_cast<float>(lidar_sensor.resolution[0] - 1);
@@ -237,7 +327,6 @@ std::optional<Lidar3dConfig> get_lidar_config(const hardware_interface::Hardware
     lidar_sensor.laser_scan_msg.ranges.resize(lidar_sensor.resolution[0] * lidar_sensor.resolution[1]);
     lidar_sensor.laser_scan_msg.intensities.resize(0);
   }
-
   return lidar_sensor;
 }
 
@@ -256,13 +345,11 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
   lidar_sensors_.clear();
   for (int i = 0; i < mj_model_->nsensor; ++i)
   {
-    fprintf(stderr, "********************* %s : %d %d\n", __FUNCTION__, __LINE__, mj_model_->sensor_type[i]);
     // Skip sensors not controlled by plugin.
     if (mj_model_->sensor_type[i] != mjtSensor::mjSENS_PLUGIN)
     {
       continue;
     }
-    fprintf(stderr, "********************* %s : %d \n", __FUNCTION__, __LINE__);
     // Grab the name of the sensor, which is required.
     const auto sensor_name_maybe = mj_id2name(mj_model_, mjtObj::mjOBJ_SENSOR, i);
 
@@ -272,7 +359,6 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
       continue;
     }
 
-    fprintf(stderr, "********************* %s : %d \n", __FUNCTION__, __LINE__);
     RCLCPP_INFO(node_->get_logger(), "Adding lidar sensor: '%s', idx: %d", sensor_name_maybe, i);
 
     std::optional<Lidar3dConfig> new_data_maybe = get_lidar_config(hardware_info, sensor_name_maybe);
@@ -283,16 +369,23 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
       return false;
     }
 
-    fprintf(stderr, "********************* %s : %d \n", __FUNCTION__, __LINE__);
     Lidar3dConfig lidar_config = new_data_maybe.value();
 
     // Setup remaining msg params and publisher for the sensor
     lidar_config.name = sensor_name_maybe;
     lidar_config.sensor_id = i;
-    lidar_config.scan_pub = node_->create_publisher<sensor_msgs::msg::LaserScan>(lidar_config.laserscan_topic, 1);
 
-    // We may someday want to compute this on the fly, but since everything is fixed this should be fine for now.
-    lidar_config.laser_scan_msg.scan_time = 1.0f / static_cast<float>(lidar_publish_rate_);
+    if (lidar_config.is_3d)
+    {
+      lidar_config.pointcloud_pub = node_->create_publisher<sensor_msgs::msg::PointCloud2>(lidar_config.lidar_topic, 1);
+    }
+    else
+    {
+      lidar_config.scan_pub = node_->create_publisher<sensor_msgs::msg::LaserScan>(lidar_config.lidar_topic, 1);
+
+      // We may someday want to compute this on the fly, but since everything is fixed this should be fine for now.
+      lidar_config.laser_scan_msg.scan_time = 1.0f / static_cast<float>(lidar_publish_rate_);
+    }
 
     // Note that we have added the sensor
     RCLCPP_INFO(node_->get_logger(), "Adding lidar sensor: '%s', idx: %d", lidar_config.name.c_str(),
@@ -350,19 +443,48 @@ void Mujoco3dLidar::update()
   }
   for (Lidar3dConfig& lidar : lidar_sensors_)
   {
-    for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
+    if (lidar.is_3d && (static_cast<int>(lidar.vectors.size()) == lidar.resolution[0] * lidar.resolution[1]))
     {
-      lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_data_->sensordata[lidar.sensor_id + i]);
+      sensor_msgs::PointCloud2Iterator<float> iterX(lidar.point_cloud_msg, "x");
+      sensor_msgs::PointCloud2Iterator<float> iterY(lidar.point_cloud_msg, "y");
+      sensor_msgs::PointCloud2Iterator<float> iterZ(lidar.point_cloud_msg, "z");
+      for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
+      {
+        float dist = static_cast<float>(mj_data_->sensordata[lidar.sensor_id + i]);
+        if ((dist >= lidar.range_min) && (dist <= lidar.range_max))
+        {
+          *iterX = static_cast<float>(lidar.vectors[i].x * dist);
+          *iterY = static_cast<float>(lidar.vectors[i].y * dist);
+          *iterZ = static_cast<float>(lidar.vectors[i].z * dist);
+        }
+        else
+        {
+          *iterX = std::numeric_limits<float>::quiet_NaN();
+          *iterY = std::numeric_limits<float>::quiet_NaN();
+          *iterZ = std::numeric_limits<float>::quiet_NaN();
+        }
+
+        // Increment the iterators
+        ++iterX;
+        ++iterY;
+        ++iterZ;
+      }
+      lidar.point_cloud_msg.header.stamp = node_->now();
+      lidar.pointcloud_pub->publish(lidar.point_cloud_msg);
     }
-    /*
+    else if (!lidar.is_3d)
+    {
+      for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
+      {
+        lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_data_->sensordata[lidar.sensor_id + i]);
         // Apply range limits to the copied data
         std::transform(lidar.laser_scan_msg.ranges.begin(), lidar.laser_scan_msg.ranges.end(),
-                      lidar.laser_scan_msg.ranges.begin(), [&](auto range) {
-                        return (range < lidar.range_min || range > lidar.range_max) ? -1.0 : range;
-                      });
-    */
-    lidar.laser_scan_msg.header.stamp = node_->now();
-    lidar.scan_pub->publish(lidar.laser_scan_msg);
+                       lidar.laser_scan_msg.ranges.begin(),
+                       [&](auto range) { return (range < lidar.range_min || range > lidar.range_max) ? -1.0 : range; });
+        lidar.laser_scan_msg.header.stamp = node_->now();
+        lidar.scan_pub->publish(lidar.laser_scan_msg);
+      }
+    }
   }
 }
 

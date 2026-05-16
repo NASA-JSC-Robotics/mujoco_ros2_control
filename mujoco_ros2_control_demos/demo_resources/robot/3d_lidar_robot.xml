@@ -4,9 +4,9 @@
   <extension>
   <plugin plugin="mujoco.plugin.lidar">
       <instance name="hokuyo">
-          <config key="resolution" value="24 1"/>
+          <config key="resolution" value="24 4"/>
           <config key="azimuth_range" value="-0.3 0.3"/>
-          <config key="elevation_range" value="0.1 0.1"/>
+          <config key="elevation_range" value="-0.01 0.01"/>
           <config key="max_range" value="10.0"/>
       </instance>
   </plugin>

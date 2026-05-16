@@ -26,11 +26,13 @@
 
 #include <mujoco/mujoco.h>
 
+#include <geometry_msgs/msg/vector3.hpp>
 #include <hardware_interface/hardware_info.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace mujoco_ros2_control
 {
@@ -40,21 +42,27 @@ struct Lidar3dConfig
   std::string name;
   int sensor_id;
   std::string frame_name;
-  std::string laser_scan_topic;
+  std::string laser_topic;
   std::vector<int> resolution;
   std::vector<double> azimuth_range;
   std::vector<double> elevation_range;
+  std::vector<geometry_msgs::msg::Vector3> vectors;
   double range_min;
   double range_max;
+  bool is_3d;
 
   // Maps the index of the rangefinder to the index of the MuJoCo rangefinder's data.
   // E.g. lidar-034 -> sensor_indexes[34] will contain index of that rangefinder in mj_data_->sensordata
   std::vector<int> sensor_indexes;
 
   // For message publishing
-  std::string laserscan_topic;
+  std::string lidar_topic;
+
   sensor_msgs::msg::LaserScan laser_scan_msg;
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub;
+
+  sensor_msgs::msg::PointCloud2 point_cloud_msg;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub;
 };
 
 /**
