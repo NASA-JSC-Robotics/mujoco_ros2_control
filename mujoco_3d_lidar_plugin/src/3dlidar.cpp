@@ -183,6 +183,7 @@ Lidar::Lidar(const mjModel* m, mjData* d, int instance, int resolution[2], mjtNu
       }
     }
   }
+
   // set up the vectors for the raycasters
   vectors_.reserve(resolution_[0] * resolution_[1] * 3);
   std::vector<mjtNum> azmuthAngles(resolution_[0]);
@@ -210,11 +211,11 @@ Lidar::Lidar(const mjModel* m, mjData* d, int instance, int resolution[2], mjtNu
     for (int32_t a = 0; a < resolution_[0]; ++a)
     {
       // x
-      vectors_.push_back(std::sin(azmuthAngles[a]) * std::cos(elevationAngles[e]));
-      // y
-      vectors_.push_back(std::sin(elevationAngles[e]));
-      // z
       vectors_.push_back(std::cos(azmuthAngles[a]) * std::cos(elevationAngles[e]));
+      // y
+      vectors_.push_back(std::sin(azmuthAngles[a]) * std::cos(elevationAngles[e]));
+      // z
+      vectors_.push_back(std::sin(elevationAngles[e]));
     }
   }
 }
@@ -327,9 +328,9 @@ void Lidar::Visualize(const mjModel* m, mjData* d, const mjvOption* opt, mjvScen
       for (int idx = 0; idx < dim; ++idx)
       {
         mjtNum dist = dataptr[idx];
-        if (dist >= 0)
+        // if (dist >= 0)
         {
-          // dist = 10.0; {
+          dist = 10.0;
           point[0] = site_pos[0] + rotated_vectors_[idx * 3] * dist;
           point[1] = site_pos[1] + rotated_vectors_[idx * 3 + 1] * dist;
           point[2] = site_pos[2] + rotated_vectors_[idx * 3 + 2] * dist;
