@@ -204,11 +204,16 @@
 
   <!-- In the URDF, the lidar sensor's Z-axis should point "up" so that the sensor data sweeps -->
   <!-- counter clockwise. We expect the X-axis to be in line with the first rangefinder's Z-axis. -->
-  <link name="lidar_sensor_frame" />
-  <joint name="lidar_sensor_link" type="fixed">
+   <link name="front_lidar" />
+  <joint name="front_lidar_link" type="fixed">
     <parent link="world"/>
-    <child link="lidar_sensor_frame"/>
+    <child link="front_lidar"/>
     <origin rpy="0 0 -1.5708" xyz="1.0 2.0 0"/>
+  </joint><link name="front_lidar_sensor_frame" />
+  <joint name="front_lidar_sensor_frame" type="fixed">
+    <parent link="front_lidar"/>
+    <child link="front_lidar_sensor_frame"/>
+    <origin rpy="0 -1.5708 -1.5708" xyz="0.0 0.0 0.15"/>
   </joint>
 
   <!-- To test the model generation from tags within the URDF, we test that when both -->

@@ -182,11 +182,14 @@ Lidar::Lidar(const mjModel *m, mjData *d, int instance, int resolution[2],
 
   for (int32_t e = 0; e < resolution_[1]; ++e) {
     for (int32_t a = 0; a < resolution_[0]; ++a) {
-      vectors_.push_back(std::cos(azmuthAngles[a]) *
-                         std::cos(elevationAngles[e]));
+      // x
       vectors_.push_back(std::sin(azmuthAngles[a]) *
                          std::cos(elevationAngles[e]));
+      // y
       vectors_.push_back(std::sin(elevationAngles[e]));
+      // z
+      vectors_.push_back(std::cos(azmuthAngles[a]) *
+                         std::cos(elevationAngles[e]));
     }
   }
 }

@@ -13,7 +13,7 @@
 </extension>
 
 <sensor>
-  <plugin name="front_lidar" instance="hokuyo" objtype="site" objname="lidar_sensor_frame"/>
+  <plugin name="front_lidar" instance="hokuyo" objtype="site" objname="front_lidar_sensor_frame"/>
 </sensor>
   <worldbody>
     <body name="upperarm">
@@ -57,12 +57,9 @@
     </body>
     <site name="world" pos="0 0 0" quat="1.0 0 0 0"/>
     <site name="base" pos="0 0 0" quat="1.0 0 0 0"/>
-    <site name="lidar_sensor_frame" pos="1.0 2.0 0" quat="0.7071054825112363 0 0 -0.7071080798594737"/>
-    <!--body name="lidar_sensor_frame_lidar_body" pos="1.0 2.0 0" quat="0.6991665401770936 0.6991665401770936 -0.10567000093116563 -0.10567000093116563">
-      <replicate site="lidar_sensor_frame" count="24" sep="-" offset="0 0 0" euler="0 0.025 0">
-        <site name="rf" pos="0.0 0.0 0.0" quat="0.0 0.0 0.0 1.0"/>
-      </replicate>
-    </body-->
+    <body name="front_lidar" pos="1.0 2.0 -0.15" quat="0.7071054825112363 0 0 -0.7071080798594737">
+      <site name="front_lidar_sensor_frame" pos="0.0 0.0 0.15" quat="0.5 -0.5 0.5 -0.5"/> 
+    </body>
   </worldbody>
   <option integrator="implicitfast"/>
   <default>
