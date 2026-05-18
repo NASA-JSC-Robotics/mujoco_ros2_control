@@ -58,7 +58,7 @@
     <site name="world" pos="0 0 0" quat="1.0 0 0 0"/>
     <site name="base" pos="0 0 0" quat="1.0 0 0 0"/>
     <body name="front_lidar" pos="1.0 2.0 -0.15" quat="0.7071054825112363 0 0 -0.7071080798594737">
-      <site name="front_lidar_sensor_frame" pos="0.0 0.0 0.15" quat="0.5 -0.5 0.5 -0.5"/> 
+      <site name="front_lidar_sensor_frame" pos="0.0 0.0 0.15" quat="0.5 -0.5 0.5 -0.5"/>
     </body>
   </worldbody>
   <option integrator="implicitfast"/>

@@ -16,16 +16,16 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "mujoco/mujoco.h"
 #include <GLFW/glfw3.h>
+#include "mujoco/mujoco.h"
 
 // MuJoCo data structures
-mjModel *m = NULL; // MuJoCo model
-mjData *d = NULL;  // MuJoCo data
-mjvCamera cam;     // abstract camera
-mjvOption opt;     // visualization options
-mjvScene scn;      // abstract scene
-mjrContext con;    // custom GPU context
+mjModel* m = NULL;  // MuJoCo model
+mjData* d = NULL;   // MuJoCo data
+mjvCamera cam;      // abstract camera
+mjvOption opt;      // visualization options
+mjvScene scn;       // abstract scene
+mjrContext con;     // custom GPU context
 
 // mouse interaction
 bool button_left = false;
@@ -35,41 +35,44 @@ double lastx = 0;
 double lasty = 0;
 
 // keyboard callback
-void keyboard(GLFWwindow *window, int key, int scancode, int act, int mods) {
+void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
+{
   // backspace: reset simulation
-  if (act == GLFW_PRESS) {
-    switch (key) {
-    case GLFW_KEY_BACKSPACE:
-      mj_resetData(m, d);
-      mj_forward(m, d);
-      break;
-    case GLFW_KEY_Y:
-      opt.flags[mjVIS_RANGEFINDER] = !(opt.flags[mjVIS_RANGEFINDER]);
-      break;
-    default:
-      break;
+  if (act == GLFW_PRESS)
+  {
+    switch (key)
+    {
+      case GLFW_KEY_BACKSPACE:
+        mj_resetData(m, d);
+        mj_forward(m, d);
+        break;
+      case GLFW_KEY_Y:
+        opt.flags[mjVIS_RANGEFINDER] = !(opt.flags[mjVIS_RANGEFINDER]);
+        break;
+      default:
+        break;
     }
   }
 }
 
 // mouse button callback
-void mouse_button(GLFWwindow *window, int button, int act, int mods) {
+void mouse_button(GLFWwindow* window, int button, int act, int mods)
+{
   // update button state
-  button_left =
-      (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
-  button_middle =
-      (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS);
-  button_right =
-      (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
+  button_left = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
+  button_middle = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS);
+  button_right = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
 
   // update mouse position
   glfwGetCursorPos(window, &lastx, &lasty);
 }
 
 // mouse move callback
-void mouse_move(GLFWwindow *window, double xpos, double ypos) {
+void mouse_move(GLFWwindow* window, double xpos, double ypos)
+{
   // no buttons down: nothing to do
-  if (!button_left && !button_middle && !button_right) {
+  if (!button_left && !button_middle && !button_right)
+  {
     return;
   }
 
@@ -84,16 +87,21 @@ void mouse_move(GLFWwindow *window, double xpos, double ypos) {
   glfwGetWindowSize(window, &width, &height);
 
   // get shift key state
-  bool mod_shift = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-                    glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS);
+  bool mod_shift =
+      (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS);
 
   // determine action based on mouse button
   mjtMouse action;
-  if (button_right) {
+  if (button_right)
+  {
     action = mod_shift ? mjMOUSE_MOVE_H : mjMOUSE_MOVE_V;
-  } else if (button_left) {
+  }
+  else if (button_left)
+  {
     action = mod_shift ? mjMOUSE_ROTATE_H : mjMOUSE_ROTATE_V;
-  } else {
+  }
+  else
+  {
     action = mjMOUSE_ZOOM;
   }
 
@@ -102,48 +110,60 @@ void mouse_move(GLFWwindow *window, double xpos, double ypos) {
 }
 
 // scroll callback
-void scroll(GLFWwindow *window, double xoffset, double yoffset) {
+void scroll(GLFWwindow* window, double xoffset, double yoffset)
+{
   // emulate vertical mouse motion = 5% of window height
   mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
-static void listLinkedPlugins() {
+static void listLinkedPlugins()
+{
   // check and print plugins that are linked directly into the executable
   int nplugin = mjp_pluginCount();
-  if (nplugin) {
+  if (nplugin)
+  {
     std::printf("Built-in plugins:\n");
-    for (int i = 0; i < nplugin; ++i) {
+    for (int i = 0; i < nplugin; ++i)
+    {
       std::printf("    %s\n", mjp_getPluginAtSlot(i)->name);
     }
-  } else
+  }
+  else
     std::printf("!!!!!!!!!!!!!!!!!!!!!!! No plugins found\n");
 }
 
-static void loadPlugins(std::string plugin_dir) {
+static void loadPlugins(std::string plugin_dir)
+{
   mj_loadAllPluginLibraries(
-      plugin_dir.c_str(), +[](const char *filename, int first, int count) {
+      plugin_dir.c_str(), +[](const char* filename, int first, int count) {
         std::printf("Plugins registered by library '%s':\n", filename);
-        for (int i = first; i < first + count; ++i) {
+        for (int i = first; i < first + count; ++i)
+        {
           std::printf("    %s\n", mjp_getPluginAtSlot(i)->name);
         }
       });
 }
 
-static void loadCustomPlugins() {
-  char *plptr = std::getenv("mujoco_DIR");
+static void loadCustomPlugins()
+{
+  char* plptr = std::getenv("mujoco_DIR");
   std::string plugin_dir = "";
-  if (plptr) {
+  if (plptr)
+  {
     plugin_dir = std::string(plptr) + "/bin/mujoco_plugin";
-  } else
+  }
+  else
     plugin_dir = "/usr/include/bin/mujoco_plugin";
   printf("Looking for plugins at %s\n", plugin_dir.c_str());
   loadPlugins(plugin_dir);
 }
 
 // main function
-int main(int argc, const char **argv) {
+int main(int argc, const char** argv)
+{
   // check command-line arguments
-  if (argc != 2) {
+  if (argc != 2)
+  {
     std::printf(" USAGE:  basic modelfile\n");
     return EXIT_FAILURE;
   }
@@ -151,13 +171,16 @@ int main(int argc, const char **argv) {
   listLinkedPlugins();
   // load and compile model
   char error[1000] = "Could not load binary model";
-  if (std::strlen(argv[1]) > 4 &&
-      !std::strcmp(argv[1] + std::strlen(argv[1]) - 4, ".mjb")) {
+  if (std::strlen(argv[1]) > 4 && !std::strcmp(argv[1] + std::strlen(argv[1]) - 4, ".mjb"))
+  {
     m = mj_loadModel(argv[1], 0);
-  } else {
+  }
+  else
+  {
     m = mj_loadXML(argv[1], nullptr, error, 1000);
   }
-  if (!m) {
+  if (!m)
+  {
     mju_error("Load model error: %s", error);
   }
 
@@ -165,12 +188,13 @@ int main(int argc, const char **argv) {
   d = mj_makeData(m);
 
   // init GLFW
-  if (!glfwInit()) {
+  if (!glfwInit())
+  {
     mju_error("Could not initialize GLFW");
   }
 
   // create window, make OpenGL context current, request v-sync
-  GLFWwindow *window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);
 
@@ -194,18 +218,20 @@ int main(int argc, const char **argv) {
   int sensor_id = mj_name2id(m, mjOBJ_SENSOR, sensor_name.c_str());
 
   // run main loop, target real-time simulation and 60 fps rendering
-  while (!glfwWindowShouldClose(window)) {
+  while (!glfwWindowShouldClose(window))
+  {
     // advance interactive simulation for 1/60 sec
     //  Assuming MuJoCo can simulate faster than real-time, which it usually
     //  can, this loop will finish on time for the next frame to be rendered at
     //  60 fps. Otherwise add a cpu timer and exit this loop when it is time to
     //  render.
     mjtNum simstart = d->time;
-    while (d->time - simstart < 1.0 / 60.0) {
+    while (d->time - simstart < 1.0 / 60.0)
+    {
       mj_step(m, d);
     }
 
-    mjtNum *sensordata = d->sensordata + m->sensor_adr[sensor_id];
+    mjtNum* sensordata = d->sensordata + m->sensor_adr[sensor_id];
 #if 0
     for(int i = 0; i < 8; ++i)
     {
@@ -216,7 +242,7 @@ int main(int argc, const char **argv) {
     fflush(stdout);
 #endif
     // get framebuffer viewport
-    mjrRect viewport = {0, 0, 0, 0};
+    mjrRect viewport = { 0, 0, 0, 0 };
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
 
     // update scene and render
