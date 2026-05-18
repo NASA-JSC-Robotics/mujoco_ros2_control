@@ -64,4 +64,10 @@ cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
 #cmake_path(GET ${mujoco_SIMULATE} ROOT_DIRECTORY mujoco_BIN_PATH)
 message("mujoco_BIN_PATH = ${mujoco_BIN_PATH}")
 
+install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
+install(TARGETS mujoco_plugin_lidar
+  DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+
 ament_package()
