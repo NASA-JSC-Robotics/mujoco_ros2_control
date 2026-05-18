@@ -434,10 +434,10 @@
     </sensor>
     <sensor name="front_lidar">
       <param name="frame_name">front_lidar_frame</param>
-      <param name="lidar_topic">front_lidar_scan</param>
-      <param name="resolution">24 1</param>
+      <param name="lidar_topic">front_lidar_points</param>
+      <param name="resolution">24 4</param>
       <param name="azimuth_range">-0.3 0.3</param>
-      <param name="elevation_range">0.0, 0.0</param>
+      <param name="elevation_range">-0.01, 0.01</param>
       <param name="range_min">0.01</param>
       <param name="range_max">10.0</param>
     </sensor>
