@@ -441,8 +441,11 @@ void Mujoco3dLidar::update()
     std::unique_lock<std::recursive_mutex> lock(*sim_mutex_);
     std::memcpy(mj_lidar_data_.data(), mj_data_->sensordata, mj_lidar_data_.size() * sizeof(mjtNum));
   }
+
+  // Step 2: Process and publish the appropriate type
   for (Lidar3dConfig& lidar : lidar_sensors_)
   {
+    // Handle 3d lidar sensors
     if (lidar.is_3d && (static_cast<int>(lidar.vectors.size()) == lidar.resolution[0] * lidar.resolution[1]))
     {
       sensor_msgs::PointCloud2Iterator<float> iterX(lidar.point_cloud_msg, "x");
@@ -477,13 +480,16 @@ void Mujoco3dLidar::update()
       for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
       {
         lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_data_->sensordata[lidar.sensor_id + i]);
+
         // Apply range limits to the copied data
         std::transform(lidar.laser_scan_msg.ranges.begin(), lidar.laser_scan_msg.ranges.end(),
                        lidar.laser_scan_msg.ranges.begin(),
                        [&](auto range) { return (range < lidar.range_min || range > lidar.range_max) ? -1.0 : range; });
-        lidar.laser_scan_msg.header.stamp = node_->now();
-        lidar.scan_pub->publish(lidar.laser_scan_msg);
       }
+
+      // Publish
+      lidar.laser_scan_msg.header.stamp = node_->now();
+      lidar.scan_pub->publish(lidar.laser_scan_msg);
     }
   }
 }
