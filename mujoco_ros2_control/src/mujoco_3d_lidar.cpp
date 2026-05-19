@@ -462,7 +462,7 @@ void Mujoco3dLidar::update()
       sensor_msgs::PointCloud2Iterator<float> iterZ(lidar.point_cloud_msg, "z");
       for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
       {
-        float dist = static_cast<float>(mj_data_->sensordata[lidar.sensor_adr + i]);
+        float dist = static_cast<float>(mj_lidar_data_[lidar.sensor_adr + i]);
         if ((dist >= lidar.range_min) && (dist <= lidar.range_max))
         {
           *iterX = static_cast<float>(lidar.vectors[i].x * dist);
@@ -488,7 +488,7 @@ void Mujoco3dLidar::update()
     {
       for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
       {
-        lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_data_->sensordata[lidar.sensor_adr + i]);
+        float dist = static_cast<float>(mj_lidar_data_[lidar.sensor_adr + i]);
 
         // Apply range limits to the copied data
         std::transform(lidar.laser_scan_msg.ranges.begin(), lidar.laser_scan_msg.ranges.end(),
