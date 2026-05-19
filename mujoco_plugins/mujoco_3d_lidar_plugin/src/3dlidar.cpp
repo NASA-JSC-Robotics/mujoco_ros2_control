@@ -163,7 +163,6 @@ Lidar* Lidar::Create(const mjModel* m, mjData* d, int instance)
   printf("  azimuth_range = %.3lf - %.3lf\n", azimuth_range[0], azimuth_range[1]);
   printf("elevation_range = %.3lf - %.3lf\n", elevation_range[0], elevation_range[1]);
   printf("      max_range = %.3lf\n", max_range);
-  mjSpec* spec = mj_makeSpec();
 
   return new Lidar(m, d, instance, resolution.data(), azimuth_range.data(), elevation_range.data(), max_range);
 }
@@ -294,9 +293,7 @@ void Lidar::Visualize(const mjModel* m, mjData* d, const mjvOption* opt, mjvScen
   {
     return;
   }
-  mj_markStack(d);
 
-  // Get sensor id.
   // Get sensor id.
   int id;
   for (id = 0; id < m->nsensor; ++id)
@@ -346,7 +343,6 @@ void Lidar::Visualize(const mjModel* m, mjData* d, const mjvOption* opt, mjvScen
         }
       }
     }
-    mj_freeStack(d);
   }
 }
 
