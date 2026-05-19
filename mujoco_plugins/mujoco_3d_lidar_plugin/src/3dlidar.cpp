@@ -328,9 +328,8 @@ void Lidar::Visualize(const mjModel* m, mjData* d, const mjvOption* opt, mjvScen
       for (int idx = 0; idx < dim; ++idx)
       {
         mjtNum dist = dataptr[idx];
-        // if (dist >= 0)
+        if (dist >= 0)
         {
-          dist = 10.0;
           point[0] = site_pos[0] + rotated_vectors_[idx * 3] * dist;
           point[1] = site_pos[1] + rotated_vectors_[idx * 3 + 1] * dist;
           point[2] = site_pos[2] + rotated_vectors_[idx * 3 + 2] * dist;
