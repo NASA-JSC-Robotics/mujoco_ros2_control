@@ -1,6 +1,6 @@
 # Lidar Plugin for Mujoco
 
-## [Lidar](include/mujoco_lidar_plugin/lidar.h)
+## [Lidar](include/mujoco_lidar_plugin/3dlidar.h)
 
 This sensor uses ray casting to simulate lidar.
 
