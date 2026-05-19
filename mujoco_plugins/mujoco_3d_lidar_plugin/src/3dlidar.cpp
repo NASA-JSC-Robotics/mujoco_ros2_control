@@ -311,7 +311,6 @@ void Lidar::Visualize(const mjModel* m, mjData* d, const mjvOption* opt, mjvScen
 
     // Get site frame.
     mjtNum* site_pos = d->site_xpos + 3 * site_id;
-    mjtNum* site_mat = d->site_xmat + 9 * site_id;
 
     int adr = m->sensor_adr[id];
     int dim = m->sensor_dim[id];
@@ -325,7 +324,7 @@ void Lidar::Visualize(const mjModel* m, mjData* d, const mjvOption* opt, mjvScen
       for (int idx = 0; idx < dim; ++idx)
       {
         mjtNum dist = dataptr[idx];
-        if (dist >= 0)
+        if (dist >= 0 && scn->ngeom < scn->maxgeom)
         {
           point[0] = site_pos[0] + rotated_vectors_[idx * 3] * dist;
           point[1] = site_pos[1] + rotated_vectors_[idx * 3 + 1] * dist;
