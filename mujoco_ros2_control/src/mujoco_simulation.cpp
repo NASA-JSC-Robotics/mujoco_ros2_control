@@ -215,7 +215,6 @@ private:
 static std::string getExecutableDir()
 {
   constexpr char kPathSep = '/';
-  const char* path = "/proc/self/exe";
 
   // Determine the executable location while respecting symlinks, as the plugins are installed
   // next to the ros2 control node's executable
