@@ -403,6 +403,9 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
     lidar_sensors_.push_back(lidar_config);
   }
 
+  // Allocate space for copied sensor data
+  mj_lidar_data_.resize(mj_model_->nsensordata);
+
   return true;
 }
 
