@@ -41,8 +41,8 @@ struct Lidar3dConfig
 {
   std::string name;
   int sensor_id;
+  int sensor_adr;
   std::string frame_name;
-  std::string laser_topic;
   std::vector<int> resolution;
   std::vector<double> azimuth_range;
   std::vector<double> elevation_range;

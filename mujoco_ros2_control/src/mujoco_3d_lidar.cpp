@@ -373,7 +373,12 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
 
     // Setup remaining msg params and publisher for the sensor
     lidar_config.name = sensor_name_maybe;
+
+    // ID of the sensor in the model
     lidar_config.sensor_id = i;
+
+    // Address of the sensor's data in mjData
+    lidar_config.sensor_adr = mj_model_->sensor_adr[i];
 
     if (lidar_config.is_3d)
     {
@@ -390,6 +395,7 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
     // Note that we have added the sensor
     RCLCPP_INFO(node_->get_logger(), "Adding lidar sensor: '%s', idx: %d", lidar_config.name.c_str(),
                 lidar_config.sensor_id);
+    RCLCPP_INFO(node_->get_logger(), "         sensor_adr: '%d'", lidar_config.sensor_adr);
     RCLCPP_INFO(node_->get_logger(), "         frame_name: '%s'", lidar_config.frame_name.c_str());
     RCLCPP_INFO(node_->get_logger(), "      azimuth_range: %.4f - %.4f", lidar_config.azimuth_range[0],
                 lidar_config.azimuth_range[1]);
@@ -456,7 +462,7 @@ void Mujoco3dLidar::update()
       sensor_msgs::PointCloud2Iterator<float> iterZ(lidar.point_cloud_msg, "z");
       for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
       {
-        float dist = static_cast<float>(mj_data_->sensordata[lidar.sensor_id + i]);
+        float dist = static_cast<float>(mj_data_->sensordata[lidar.sensor_adr + i]);
         if ((dist >= lidar.range_min) && (dist <= lidar.range_max))
         {
           *iterX = static_cast<float>(lidar.vectors[i].x * dist);
@@ -482,7 +488,7 @@ void Mujoco3dLidar::update()
     {
       for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
       {
-        lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_data_->sensordata[lidar.sensor_id + i]);
+        lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_data_->sensordata[lidar.sensor_adr + i]);
 
         // Apply range limits to the copied data
         std::transform(lidar.laser_scan_msg.ranges.begin(), lidar.laser_scan_msg.ranges.end(),
