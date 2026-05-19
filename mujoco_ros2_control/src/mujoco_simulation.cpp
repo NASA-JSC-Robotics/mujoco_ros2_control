@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <future>
 #include <iostream>
 #include <memory>
@@ -216,43 +217,13 @@ static std::string getExecutableDir()
   constexpr char kPathSep = '/';
   const char* path = "/proc/self/exe";
 
+  // Determine the executable location while respecting symlinks, as the plugins are installed
+  // next to the ros2 control node's executable
   std::string real_path = [&]() -> std::string {
-    std::unique_ptr<char[]> realpath(nullptr);
-    std::uint32_t buf_size = 128;
-    bool success = false;
-    while (!success)
-    {
-      realpath.reset(new (std::nothrow) char[buf_size]);
-      if (!realpath)
-      {
-        std::cerr << "cannot allocate memory to store executable path\n";
-        return "";
-      }
-
-      auto written = readlink(path, realpath.get(), buf_size);
-      if (written < buf_size)
-      {
-        realpath.get()[written] = '\0';
-        success = true;
-      }
-      else if (written == -1)
-      {
-        if (errno == EINVAL)
-        {
-          // path is already not a symlink, just use it
-          return path;
-        }
-
-        std::cerr << "error while resolving executable path: " << strerror(errno) << '\n';
-        return "";
-      }
-      else
-      {
-        // realpath is too small, grow and retry
-        buf_size *= 2;
-      }
-    }
-    return realpath.get();
+    std::ifstream f("/proc/self/cmdline");
+    std::string argv0;
+    std::getline(f, argv0, '\0');
+    return argv0;
   }();
 
   if (real_path.empty())
