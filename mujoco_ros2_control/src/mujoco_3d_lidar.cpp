@@ -488,13 +488,13 @@ void Mujoco3dLidar::update()
     {
       for (int i = 0; i < lidar.resolution[0] * lidar.resolution[1]; ++i)
       {
-        float dist = static_cast<float>(mj_lidar_data_[lidar.sensor_adr + i]);
-
-        // Apply range limits to the copied data
-        std::transform(lidar.laser_scan_msg.ranges.begin(), lidar.laser_scan_msg.ranges.end(),
-                       lidar.laser_scan_msg.ranges.begin(),
-                       [&](auto range) { return (range < lidar.range_min || range > lidar.range_max) ? -1.0 : range; });
+        lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_lidar_data_[lidar.sensor_adr + i]);
       }
+
+      // Apply range limits to the copied data
+      std::transform(lidar.laser_scan_msg.ranges.begin(), lidar.laser_scan_msg.ranges.end(),
+                     lidar.laser_scan_msg.ranges.begin(),
+                     [&](auto range) { return (range < lidar.range_min || range > lidar.range_max) ? -1.0 : range; });
 
       // Publish
       lidar.laser_scan_msg.header.stamp = node_->now();
