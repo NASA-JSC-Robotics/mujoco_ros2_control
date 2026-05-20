@@ -30,7 +30,7 @@
       <joint joint1="gripper_left_finger_joint" joint2="gripper_right_finger_joint" polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
     </equality>
 
-    <!-- 2-D Lidar Sensor -->
+    <!-- 2-D Lidar Sensor, published at 10 hz -->
     <extension>
       <plugin plugin="mujoco.plugin.lidar">
           <instance name="2d_lidar">
@@ -38,6 +38,8 @@
               <config key="azimuth_range" value="-0.3 0.3"/>
               <config key="elevation_range" value="0.0"/>
               <config key="max_range" value="10.0"/>
+              <config key="min_range" value="0.0"/>
+              <config key="update_rate" value="0.1"/>
           </instance>
       </plugin>
     </extension>
@@ -45,7 +47,7 @@
       <plugin name="2d_lidar" instance="2d_lidar" objtype="site" objname="lidar_sensor_frame"/>
     </sensor>
 
-    <!-- 3-D Lidar Sensor -->
+    <!-- 3-D Lidar Sensor, published at 1 hz -->
     <extension>
       <plugin plugin="mujoco.plugin.lidar">
           <instance name="3d_lidar">
@@ -53,6 +55,8 @@
               <config key="azimuth_range" value="-0.3 0.3"/>
               <config key="elevation_range" value="-0.3 0.3"/>
               <config key="max_range" value="10.0"/>
+              <config key="min_range" value="0.0"/>
+              <config key="update_rate" value="1.0"/>
           </instance>
       </plugin>
     </extension>

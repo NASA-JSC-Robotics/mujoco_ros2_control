@@ -254,7 +254,7 @@
             <joint joint1="gripper_left_finger_joint" joint2="gripper_right_finger_joint" polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
           </equality>
 
-          <!-- 2-D Lidar Sensor -->
+          <!-- 2-D Lidar Sensor, published at 10 hz -->
           <extension>
             <plugin plugin="mujoco.plugin.lidar">
                 <instance name="2d_lidar">
@@ -262,13 +262,12 @@
                     <config key="azimuth_range" value="-0.3 0.3"/>
                     <config key="elevation_range" value="0.0"/>
                     <config key="max_range" value="10.0"/>
+                    <config key="min_range" value="0.0"/>
+                    <config key="update_rate" value="0.1"/>
                 </instance>
             </plugin>
           </extension>
-          <sensor>
-            <plugin name="2d_lidar" instance="2d_lidar" objtype="site" objname="lidar_sensor_frame"/>
-          </sensor>
-          <!-- 3-D Lidar Sensor -->
+          <!-- 3-D Lidar Sensor, published at 1 hz -->
           <extension>
             <plugin plugin="mujoco.plugin.lidar">
                 <instance name="3d_lidar">
@@ -276,6 +275,8 @@
                     <config key="azimuth_range" value="-0.3 0.3"/>
                     <config key="elevation_range" value="-0.3 0.3"/>
                     <config key="max_range" value="10.0"/>
+                    <config key="min_range" value="0.0"/>
+                    <config key="update_rate" value="1.0"/>
                 </instance>
             </plugin>
           </extension>
@@ -363,8 +364,8 @@
       <!-- Publish camera images at 6 hz -->
       <param name="camera_publish_rate">6.0</param>
 
-      <!-- Publish lidar scans at 10 hz -->
-      <param name="lidar_publish_rate">10.0</param>
+      <!-- Publish lidar scans at 5 hz -->
+      <param name="lidar_publish_rate">5.0</param>
     </hardware>
     <joint name="joint1">
       <command_interface name="position"/>
@@ -456,20 +457,10 @@
     <sensor name="2d_lidar">
       <param name="frame_name">lidar_sensor_frame</param>
       <param name="lidar_topic">/scan</param>
-      <param name="resolution">24 1</param>
-      <param name="azimuth_range">-0.3 0.3</param>
-      <param name="elevation_range">0.0</param>
-      <param name="range_min">0.01</param>
-      <param name="range_max">10.0</param>
     </sensor>
     <sensor name="3d_lidar">
       <param name="frame_name">3d_lidar_sensor_frame</param>
       <param name="lidar_topic">/point_cloud</param>
-      <param name="resolution">24 24</param>
-      <param name="azimuth_range">-0.3 0.3</param>
-      <param name="elevation_range">-0.3 0.3</param>
-      <param name="range_min">0.01</param>
-      <param name="range_max">10.0</param>
     </sensor>
   </ros2_control>
 </robot>
