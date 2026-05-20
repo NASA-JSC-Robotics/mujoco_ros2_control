@@ -299,7 +299,7 @@ The plugin supports both 2D (single-row) and 3D (multi-row) configurations, publ
 The plugin rays are cast along the sensor site's local ``X`` axis, with azimuth sweeping in the XY plane and elevation sweeping toward ``Z``.
 
 MJCF Configuration
-^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~
 
 Define the plugin instance and attach it to a site in your MJCF:
 
@@ -349,7 +349,7 @@ Plugin parameters:
 To reiterate, when the vertical resolution is 1, the wrapper publishes ``LaserScan`` messages, otherwise it publishes ``PointCloud2`` messages.
 
 ros2_control Xacro
-^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~
 
 The sensor name in the ``ros2_control`` xacro **must match** the sensor name in the MJCF.
 Configure each lidar through the ``<sensor>`` tag:
