@@ -240,7 +240,7 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
     // Setup message and publisher
     if (lidar_config.is_3d)
     {
-      lidar_config.lidar_topic = lidar_config.lidar_topic.empty() ? lidar_config.lidar_topic : "/points";
+      lidar_config.lidar_topic = !lidar_config.lidar_topic.empty() ? lidar_config.lidar_topic : "/points";
 
       ComputeVectors(lidar_config);
       sensor_msgs::PointCloud2Modifier modifier(lidar_config.point_cloud_msg);
@@ -265,7 +265,7 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
     }
     else
     {
-      lidar_config.lidar_topic = lidar_config.lidar_topic.empty() ? lidar_config.lidar_topic : "scan";
+      lidar_config.lidar_topic = !lidar_config.lidar_topic.empty() ? lidar_config.lidar_topic : "/scan";
 
       float angle_increment = static_cast<float>(lidar_config.azimuth_range[1] - lidar_config.azimuth_range[0]) /
                               static_cast<float>(lidar_config.resolution[0] - 1);
@@ -298,7 +298,7 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
                 lidar_config.resolution[1]);
     RCLCPP_INFO(node_->get_logger(), "          range_min: %f", lidar_config.range_min);
     RCLCPP_INFO(node_->get_logger(), "          range_max: %f", lidar_config.range_max);
-    RCLCPP_INFO(node_->get_logger(), "              topic: %s", lidar_config.lidar_topic);
+    RCLCPP_INFO(node_->get_logger(), "              topic: %s", lidar_config.lidar_topic.c_str());
 
     lidar_sensors_.push_back(lidar_config);
   }
