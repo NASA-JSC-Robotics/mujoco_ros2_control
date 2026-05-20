@@ -18,6 +18,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(mujoco_3d_lidar REQUIRED)
 find_package(mujoco_ros2_control_msgs REQUIRED)
 find_package(mujoco_ros2_control_plugins REQUIRED)
 find_package(Threads REQUIRED)
@@ -144,6 +145,16 @@ else()
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
   )
+endif()
+
+# Find all of the plugins defined next to the simulate executable and ensure the are available to the
+# mujoco ros2 control node.
+find_program(mujoco_SIMULATE NAMES simulate mujoco-simulate)
+if(mujoco_SIMULATE)
+  cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
+  install(DIRECTORY "${mujoco_BIN_PATH}/mujoco_plugin/"
+    DESTINATION lib/${PROJECT_NAME}/mujoco_plugin
+    FILES_MATCHING PATTERN "*.so")
 endif()
 
 # MuJoCo ROS 2 control system interface (this package)

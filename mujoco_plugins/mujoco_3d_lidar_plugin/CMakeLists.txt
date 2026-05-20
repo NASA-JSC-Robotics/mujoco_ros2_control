@@ -1,14 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 project(mujoco_3d_lidar)
 
+find_package(ament_cmake REQUIRED)
 # Link MuJoCo via the vendor package
 find_package(mujoco_vendor REQUIRED)
-find_package(mujoco_ros2_control REQUIRED)
-
-message("mujoco_ros2_control_DIR = ${mujoco_ros2_control_DIR}")
-set(mujoco_ros2_control_BIN_DIR ${mujoco_ros2_control_DIR}/../../../lib/mujoco_ros2_control)
-cmake_path(SET mujoco_ros2_control_BIN_DIR NORMALIZE ${mujoco_ros2_control_DIR}/../../../lib/mujoco_ros2_control)
-message("mujoco_ros2_control_BIN_DIR = ${mujoco_ros2_control_BIN_DIR}")
 
 # We don't care about warnings from the external sources
 set(mujoco_SILENCE_COMPILER_WARNINGS
@@ -45,27 +40,21 @@ target_link_libraries(
   glfw
 )
 
+# Install in the local package
 install(
   TARGETS mujoco_plugin_lidar
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  LIBRARY DESTINATION lib/${PROJECT_NAME}
 )
-
-install(DIRECTORY DESTINATION ${mujoco_ros2_control_BIN_DIR}/mujoco_plugin)
-install(TARGETS mujoco_plugin_lidar
-  DESTINATION ${mujoco_ros2_control_BIN_DIR}/mujoco_plugin
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 # Duplicate the install to be next to the simulate application so this works there, as well.
 find_program(mujoco_SIMULATE NAMES simulate mujoco-simulate)
 message("mujoco_SIMULATE = ${mujoco_SIMULATE}")
-
-cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
-#cmake_path(GET ${mujoco_SIMULATE} ROOT_DIRECTORY mujoco_BIN_PATH)
 message("mujoco_BIN_PATH = ${mujoco_BIN_PATH}")
-
+cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
 install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
-install(TARGETS mujoco_plugin_lidar
-  DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+install(TARGETS mujoco_plugin_lidar DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
 
+ament_export_targets(export_${PROJECT_NAME})
+ament_export_dependencies(mujoco_vendor)
 ament_package()
