@@ -302,8 +302,6 @@ private:
   // Containers for RGB-D cameras
   std::unique_ptr<MujocoCameras> cameras_;
 
-  // Containers for LIDAR sensors
-  std::unique_ptr<MujocoLidar> lidar_sensors_;
   // Containers for 3d lidar sensors
   std::unique_ptr<Mujoco3dLidar> lidar_3d_sensors_;
 

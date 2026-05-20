@@ -247,11 +247,6 @@ MujocoSystemInterface::~MujocoSystemInterface()
   {
     cameras_->close();
   }
-  if (lidar_sensors_)
-  {
-    lidar_sensors_->close();
-  }
-
   if (lidar_3d_sensors_)
   {
     lidar_3d_sensors_->close();
@@ -329,8 +324,6 @@ MujocoSystemInterface::on_init(const hardware_interface::HardwareComponentInterf
   // Pull the lidar publish rate out of the info, if present, otherwise default to 5 hz.
   const auto lidar_publish_rate =
       std::stod(get_hardware_parameter(get_hardware_info(), "lidar_publish_rate").value_or("5.0"));
-  const auto lidar_3d_publish_rate =
-      std::stod(get_hardware_parameter(get_hardware_info(), "3d_lidar_publish_rate").value_or("5.0"));
 
   // Check for headless mode
   const bool headless =
@@ -486,18 +479,8 @@ MujocoSystemInterface::on_init(const hardware_interface::HardwareComponentInterf
 
   // Configure Lidar sensors
   RCLCPP_INFO(get_logger(), "Initializing lidar...");
-  lidar_sensors_ = std::make_unique<MujocoLidar>(get_node(), &simulation_->mutex(), simulation_->data(),
-                                                 simulation_->model(), lidar_publish_rate);
-  if (!lidar_sensors_->register_lidar(get_hardware_info()))
-  {
-    RCLCPP_INFO(get_logger(), "No rangefinder lidars found");
-  }
-
-  // configure 3d lidar sensors
-
-  RCLCPP_INFO(get_logger(), "Initializing 3d lidar...");
   lidar_3d_sensors_ = std::make_unique<Mujoco3dLidar>(get_node(), &simulation_->mutex(), simulation_->data(),
-                                                      simulation_->model(), lidar_3d_publish_rate);
+                                                      simulation_->model(), lidar_publish_rate);
   if (!lidar_3d_sensors_->register_lidars(get_hardware_info()))
   {
     RCLCPP_INFO(get_logger(), "No 3d lidar sensor found");
@@ -722,7 +705,6 @@ hardware_interface::CallbackReturn MujocoSystemInterface::on_activate(const rclc
 
   // Start camera and sensor rendering loops
   cameras_->init();
-  lidar_sensors_->init();
   lidar_3d_sensors_->init();
 
   return hardware_interface::CallbackReturn::SUCCESS;
