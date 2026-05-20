@@ -501,7 +501,7 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
 
     def test_get_processed_mujoco_inputs_none_element(self):
         result = get_processed_mujoco_inputs(None)
-        self.assertEqual(len(result), 4)
+        self.assertEqual(len(result), 3)
         decompose_dict, cameras_dict, modify_element_dict = result
         self.assertEqual(decompose_dict, {})
         self.assertEqual(cameras_dict, {})
