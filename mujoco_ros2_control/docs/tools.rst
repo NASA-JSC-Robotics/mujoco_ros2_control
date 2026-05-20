@@ -171,6 +171,13 @@ Main sub-elements
    Convenience tags that the converter understands and processes into valid MJCF entries.
    Use these when the converter must transform or generate MJCF elements (for example,
    cameras, mesh decomposition hints, or targeted modifications).
+
+   .. note::
+
+      Lidar is now implemented as a standalone MuJoCo sensor plugin (``mujoco.plugin.lidar``)
+      and is no longer generated through ``processed_inputs``.
+      Refer to the documentation below and the :doc:`hardware interface docs <hardware_interface>` for details.
+
    Common processed tags (supported by the demo converter):
 
    - ``decompose_mesh`` (attributes: ``mesh_name``, ``threshold``) — requests mesh decomposition
