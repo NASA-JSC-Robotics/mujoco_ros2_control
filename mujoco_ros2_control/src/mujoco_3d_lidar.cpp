@@ -343,11 +343,26 @@ void Mujoco3dLidar::update()
   {
     std::unique_lock<std::recursive_mutex> lock(*sim_mutex_);
     std::memcpy(mj_lidar_data_.data(), mj_data_->sensordata, mj_lidar_data_.size() * sizeof(mjtNum));
+
+    // Also grab when the scan was last completed
+    for (Lidar3dConfig& lidar : lidar_sensors_)
+    {
+      int plugin_inst = mj_model_->sensor_plugin[lidar.sensor_id];
+      lidar.last_compute_time = mj_data_->plugin_state[mj_model_->plugin_stateadr[plugin_inst]];
+    }
   }
 
   // Step 2: Process and publish the appropriate type
   for (Lidar3dConfig& lidar : lidar_sensors_)
   {
+    // If the scan is stale skip publishing
+    // TODO: Just remove this when this is reworked as a plugin
+    if (lidar.last_compute_time == lidar.last_published_time)
+    {
+      continue;
+    }
+    lidar.last_published_time = lidar.last_compute_time;
+
     // Handle 3d lidar sensors
     if (lidar.is_3d && (static_cast<int>(lidar.vectors.size()) == lidar.resolution[0] * lidar.resolution[1]))
     {
