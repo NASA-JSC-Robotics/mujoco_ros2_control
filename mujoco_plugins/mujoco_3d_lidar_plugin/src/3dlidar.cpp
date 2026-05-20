@@ -411,8 +411,8 @@ void Lidar::RegisterPlugin()
   plugin.nattribute = sizeof(attributes) / sizeof(attributes[0]);
   plugin.attributes = attributes;
 
-  // Stateless.
-  plugin.nstate = +[](const mjModel* m, int instance) { return 0; };
+  // Maintain last updated state.
+  plugin.nstate = +[](const mjModel* m, int instance) { return 1; };
 
   // Sensor dimension = resolution[0] * resolution[1]
   plugin.nsensordata = +[](const mjModel* m, int instance, int sensor_id) {
