@@ -42,7 +42,6 @@
 #include "mujoco_ros2_control/data.hpp"
 #include "mujoco_ros2_control/mujoco_3d_lidar.hpp"
 #include "mujoco_ros2_control/mujoco_cameras.hpp"
-#include "mujoco_ros2_control/mujoco_lidar.hpp"
 #include "mujoco_ros2_control/mujoco_simulation.hpp"
 
 #include <pluginlib/class_list_macros.hpp>
