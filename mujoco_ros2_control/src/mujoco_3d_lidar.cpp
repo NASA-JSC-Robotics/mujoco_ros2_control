@@ -138,196 +138,15 @@ std::optional<Lidar3dConfig> get_lidar_config(const hardware_interface::Hardware
     return std::nullopt;
   };
 
-  std::optional<std::string> frame_name = get_parameter("frame_name");
-  std::optional<std::string> lidar_topic = get_parameter("lidar_topic");
+  Lidar3dConfig sensor;
 
-  // resolution
-  int resolution[2] = { 1, 1 };
-  std::optional<std::string> res_str = get_parameter("resolution");
-  if (!res_str.has_value())
-  {
-    fprintf(stderr, "Resolution must be specified\n");
-    return std::nullopt;
-  }
+  auto frame_name = get_parameter("frame_name");
+  sensor.frame_name = frame_name.value_or("");
 
-  int res = sscanf(res_str.value().c_str(), "%d %d", &resolution[0], &resolution[1]);
-  if (res != 2)
-  {
-    fprintf(stderr, "Both horizontal and vertical resolutions must be specified");
-    return std::nullopt;
-  }
-  if (resolution[0] <= 0 || resolution[1] <= 0)
-  {
-    fprintf(stderr, "Horizontal and vertical resolutions must be positive %d , %d\n", resolution[0], resolution[1]);
-    return std::nullopt;
-  }
+  auto lidar_topic = get_parameter("lidar_topic");
+  sensor.lidar_topic = lidar_topic.value_or("");
 
-  // horizontal field of view
-  std::vector<double> azimuth_range;
-  std::optional<std::string> azimuth_range_str = get_parameter("azimuth_range");
-  if (!azimuth_range_str.has_value())
-  {
-    fprintf(stderr, "Azimuth Range must be specified\n");
-    return std::nullopt;
-  }
-  ReadVector(azimuth_range, azimuth_range_str.value());
-  if (azimuth_range.size() != 2)
-  {
-    fprintf(stderr, "Both minimum and maximum azimuth angles must be specified");
-    return std::nullopt;
-  }
-  if (azimuth_range[0] < -M_PI)
-  {
-    fprintf(stderr, "`azimuth_range minimum` must be greater than or equal to -pi");
-    return std::nullopt;
-  }
-  if (azimuth_range[1] > M_PI)
-  {
-    fprintf(stderr, "`azimuth_range maximum` must be less than or equal to pi");
-    return std::nullopt;
-  }
-  if (azimuth_range[0] >= azimuth_range[1])
-  {
-    fprintf(stderr, "`azimuth_range minimum` must less than 'azimuth_range maximum");
-    return std::nullopt;
-  }
-
-  // vertical field of view
-  std::vector<double> elevation_range;
-  std::optional<std::string> elevation_range_str = get_parameter("elevation_range");
-  if (elevation_range_str.has_value())
-  {
-    ReadVector(elevation_range, elevation_range_str.value().c_str());
-    if (elevation_range.size() != 2)
-    {
-      if (elevation_range.size() == 0)
-      {
-        fprintf(stderr, "Mininimum elevation angle must be specified");
-        return std::nullopt;
-      }
-      if (elevation_range.size() == 1)
-      {
-        if (resolution[1] > 1)
-        {
-          fprintf(stderr, "When elevation resolution is greater than 1, maximum "
-                          "elevation must be specified\n");
-          return std::nullopt;
-        }
-        else
-        {
-          elevation_range[1] = elevation_range[0];
-        }
-      }
-    }
-    if (elevation_range[0] < -M_PI)
-    {
-      fprintf(stderr, "`elevation_range minimum` must be greater than or equal to -pi\n");
-      return std::nullopt;
-    }
-    if (elevation_range[1] > M_PI)
-    {
-      fprintf(stderr, "`elevation_range maximum` must be less than or equal to pi\n");
-      return std::nullopt;
-    }
-    if ((resolution[1] > 1) && (elevation_range[0] >= elevation_range[1]))
-    {
-      fprintf(stderr, "`elevation_range minimum` must less than 'elevation_range maximum\n");
-      return std::nullopt;
-    }
-  }
-  else if (resolution[1] <= 1)
-  {
-    elevation_range = { 0.0, 0.0 };
-  }
-  else
-  {
-    if (resolution[1] > 1)
-    {
-      fprintf(stderr, "When elevation resolution is greater than 1, elevation range must be specified\n");
-      return std::nullopt;
-    }
-  }
-
-  std::optional<std::string> max_range_str = get_parameter("range_max");
-  std::optional<std::string> min_range_str = get_parameter("range_min");
-  double min_range = min_range_str.has_value() ? std::atof(min_range_str.value().c_str()) : 0.0;
-  double max_range = max_range_str.has_value() ? std::atof(max_range_str.value().c_str()) : 1000.0;
-
-  if (max_range <= 0.0)
-  {
-    fprintf(stderr, "Lidar max range must be greater than 0.0\n");
-    return std::nullopt;
-  }
-  if (min_range < 0.0)
-  {
-    fprintf(stderr, "Lidar min range must be greater or equal to 0.0\n");
-    return std::nullopt;
-  }
-
-  if (max_range <= min_range)
-  {
-    return std::nullopt;
-  }
-
-  if (!frame_name.has_value())
-  {
-    return std::nullopt;
-  }
-
-  // Otherwise construct and return a new LidarData object
-  Lidar3dConfig lidar_sensor;
-  lidar_sensor.frame_name = frame_name.value();
-  lidar_sensor.azimuth_range = azimuth_range;
-  lidar_sensor.elevation_range = elevation_range;
-  lidar_sensor.resolution = { resolution[0], resolution[1] };
-  lidar_sensor.range_min = min_range;
-  lidar_sensor.range_max = max_range;
-
-  if (lidar_sensor.resolution[1] <= 1)
-    lidar_sensor.is_3d = false;
-  else
-    lidar_sensor.is_3d = true;
-
-  if (lidar_sensor.is_3d)
-  {
-    lidar_sensor.lidar_topic = lidar_topic.has_value() ? lidar_topic.value() : "/points";
-
-    ComputeVectors(lidar_sensor);
-    sensor_msgs::PointCloud2Modifier modifier(lidar_sensor.point_cloud_msg);
-
-    modifier.setPointCloud2Fields(3, "x", 1, sensor_msgs::msg::PointField::FLOAT32, "y", 1,
-                                  sensor_msgs::msg::PointField::FLOAT32, "z", 1, sensor_msgs::msg::PointField::FLOAT32);
-
-    lidar_sensor.lidar_topic = lidar_topic.has_value() ? lidar_topic.value() : "/points";
-    lidar_sensor.point_cloud_msg.header.frame_id = lidar_sensor.frame_name;
-    lidar_sensor.point_cloud_msg.width = resolution[0];
-    lidar_sensor.point_cloud_msg.height = resolution[1];
-    lidar_sensor.point_cloud_msg.point_step = 12;  // Length of a point in bytes
-    lidar_sensor.point_cloud_msg.is_bigendian = IsBigEndian();
-    lidar_sensor.point_cloud_msg.is_dense = false;
-    lidar_sensor.point_cloud_msg.row_step = lidar_sensor.point_cloud_msg.point_step *
-                                            lidar_sensor.point_cloud_msg.width * lidar_sensor.point_cloud_msg.height;
-    lidar_sensor.point_cloud_msg.data.resize(lidar_sensor.point_cloud_msg.row_step);
-  }
-  else
-  {
-    lidar_sensor.lidar_topic = lidar_topic.has_value() ? lidar_topic.value() : "/scan";
-
-    float angle_increment = static_cast<float>(lidar_sensor.azimuth_range[1] - lidar_sensor.azimuth_range[0]) /
-                            static_cast<float>(lidar_sensor.resolution[0] - 1);
-
-    // Configure the static parameters of the laserscan message
-    lidar_sensor.laser_scan_msg.header.frame_id = lidar_sensor.frame_name;
-    lidar_sensor.laser_scan_msg.time_increment = 0.0;  // Does this matter?
-    lidar_sensor.laser_scan_msg.angle_min = static_cast<float>(lidar_sensor.azimuth_range[0]);
-    lidar_sensor.laser_scan_msg.angle_max = static_cast<float>(lidar_sensor.azimuth_range[1]);
-    lidar_sensor.laser_scan_msg.angle_increment = angle_increment;
-    lidar_sensor.laser_scan_msg.range_min = static_cast<float>(lidar_sensor.range_min);
-    lidar_sensor.laser_scan_msg.range_max = static_cast<float>(lidar_sensor.range_max);
-    lidar_sensor.laser_scan_msg.ranges.resize(lidar_sensor.resolution[0] * lidar_sensor.resolution[1]);
-    lidar_sensor.laser_scan_msg.intensities.resize(0);
-  }
-  return lidar_sensor;
+  return sensor;
 }
 
 Mujoco3dLidar::Mujoco3dLidar(rclcpp::Node::SharedPtr node, std::recursive_mutex* sim_mutex, mjData* mujoco_data,
@@ -352,42 +171,118 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
     }
     // Grab the name of the sensor, which is required.
     const auto sensor_name_maybe = mj_id2name(mj_model_, mjtObj::mjOBJ_SENSOR, i);
-
     if (sensor_name_maybe == nullptr)
     {
       RCLCPP_WARN(node_->get_logger(), "Cannot find a name for lidar sensor at index: '%d' skipping!", i);
       continue;
     }
 
-    std::optional<Lidar3dConfig> new_data_maybe = get_lidar_config(hardware_info, sensor_name_maybe);
+    auto new_data_maybe = get_lidar_config(hardware_info, sensor_name_maybe);
     if (!new_data_maybe.has_value())
     {
       RCLCPP_ERROR(node_->get_logger(), "Failed to parse required configuration from ros2_control xacro: '%s'",
                    sensor_name_maybe);
       return false;
     }
+    auto lidar_config = new_data_maybe.value();
 
-    Lidar3dConfig lidar_config = new_data_maybe.value();
+    if (lidar_config.frame_name.empty())
+    {
+      RCLCPP_ERROR(node_->get_logger(), "frame_name must be specified for sensor '%s'", sensor_name_maybe);
+      return false;
+    }
+
+    // Pull the remaining configuration directly out of the mujoco plugin, where validation happens
+    int plugin_instance = mj_model_->sensor_plugin[i];
+    auto get_plugin_config = [&](const char* key) -> std::string {
+      return std::string(mj_getPluginConfig(mj_model_, plugin_instance, key));
+    };
+
+    // resolution
+    ReadVector(lidar_config.resolution, get_plugin_config("resolution"));
+    if (lidar_config.resolution.size() != 2 || lidar_config.resolution[0] <= 0 || lidar_config.resolution[1] <= 0)
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Invalid resolution provided for sensor '%s'", sensor_name_maybe);
+      return false;
+    }
+    lidar_config.is_3d = lidar_config.resolution[1] > 1;
+
+    // horizontal field of view
+    ReadVector(lidar_config.azimuth_range, get_plugin_config("azimuth_range"));
+
+    // vertical field of view
+    ReadVector(lidar_config.elevation_range, get_plugin_config("elevation_range"));
+    if (lidar_config.elevation_range.size() == 1)
+    {
+      lidar_config.elevation_range.push_back(lidar_config.elevation_range[0]);
+    }
+    else if (lidar_config.elevation_range.empty())
+    {
+      lidar_config.elevation_range = { 0.0, 0.0 };
+    }
+
+    // max/min ranges
+    std::string max_range_str = get_plugin_config("max_range");
+    lidar_config.range_max = max_range_str.empty() ? 1000.0 : std::atof(max_range_str.c_str());
+    std::string min_range_str = get_plugin_config("min_range");
+    lidar_config.range_min = min_range_str.empty() ? 0.0 : std::atof(min_range_str.c_str());
+    if (lidar_config.range_max <= lidar_config.range_min)
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Invalid ranges for sensor '%s'", sensor_name_maybe);
+      return false;
+    }
 
     // Setup remaining msg params and publisher for the sensor
     lidar_config.name = sensor_name_maybe;
-
-    // ID of the sensor in the model
     lidar_config.sensor_id = i;
-
-    // Address of the sensor's data in mjData
     lidar_config.sensor_adr = mj_model_->sensor_adr[i];
 
+    // Setup message and publisher
     if (lidar_config.is_3d)
     {
+      lidar_config.lidar_topic = lidar_config.lidar_topic.empty() ? lidar_config.lidar_topic : "/points";
+
+      ComputeVectors(lidar_config);
+      sensor_msgs::PointCloud2Modifier modifier(lidar_config.point_cloud_msg);
+
+      modifier.setPointCloud2Fields(3, "x", 1, sensor_msgs::msg::PointField::FLOAT32, "y", 1,
+                                    sensor_msgs::msg::PointField::FLOAT32, "z", 1,
+                                    sensor_msgs::msg::PointField::FLOAT32);
+
+      // Configure the static parameters of the pointcloud message
+      lidar_config.point_cloud_msg.header.frame_id = lidar_config.frame_name;
+      lidar_config.point_cloud_msg.width = lidar_config.resolution[0];
+      lidar_config.point_cloud_msg.height = lidar_config.resolution[1];
+      lidar_config.point_cloud_msg.point_step = 12;
+      lidar_config.point_cloud_msg.is_bigendian = IsBigEndian();
+      lidar_config.point_cloud_msg.is_dense = false;
+      lidar_config.point_cloud_msg.row_step =
+          lidar_config.point_cloud_msg.point_step * lidar_config.point_cloud_msg.width;
+      lidar_config.point_cloud_msg.data.resize(lidar_config.point_cloud_msg.row_step *
+                                               lidar_config.point_cloud_msg.height);
+
       lidar_config.pointcloud_pub = node_->create_publisher<sensor_msgs::msg::PointCloud2>(lidar_config.lidar_topic, 1);
     }
     else
     {
-      lidar_config.scan_pub = node_->create_publisher<sensor_msgs::msg::LaserScan>(lidar_config.lidar_topic, 1);
+      lidar_config.lidar_topic = lidar_config.lidar_topic.empty() ? lidar_config.lidar_topic : "scan";
 
-      // We may someday want to compute this on the fly, but since everything is fixed this should be fine for now.
+      float angle_increment = static_cast<float>(lidar_config.azimuth_range[1] - lidar_config.azimuth_range[0]) /
+                              static_cast<float>(lidar_config.resolution[0] - 1);
+
+      // Configure the static parameters of the laserscan message
+      lidar_config.laser_scan_msg.header.frame_id = lidar_config.frame_name;
+      lidar_config.laser_scan_msg.time_increment = 0.0;  // Does this matter?
+      lidar_config.laser_scan_msg.angle_min = static_cast<float>(lidar_config.azimuth_range[0]);
+      lidar_config.laser_scan_msg.angle_max = static_cast<float>(lidar_config.azimuth_range[1]);
+      lidar_config.laser_scan_msg.angle_increment = angle_increment;
+      lidar_config.laser_scan_msg.range_min = static_cast<float>(lidar_config.range_min);
+      lidar_config.laser_scan_msg.range_max = static_cast<float>(lidar_config.range_max);
+      lidar_config.laser_scan_msg.ranges.resize(lidar_config.resolution[0] * lidar_config.resolution[1]);
+      lidar_config.laser_scan_msg.intensities.resize(0);
       lidar_config.laser_scan_msg.scan_time = 1.0f / static_cast<float>(lidar_publish_rate_);
+
+      lidar_config.scan_pub = node_->create_publisher<sensor_msgs::msg::LaserScan>(lidar_config.lidar_topic, 1);
     }
 
     // Note that we have added the sensor
@@ -403,6 +298,7 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
                 lidar_config.resolution[1]);
     RCLCPP_INFO(node_->get_logger(), "          range_min: %f", lidar_config.range_min);
     RCLCPP_INFO(node_->get_logger(), "          range_max: %f", lidar_config.range_max);
+    RCLCPP_INFO(node_->get_logger(), "              topic: %s", lidar_config.lidar_topic);
 
     lidar_sensors_.push_back(lidar_config);
   }
