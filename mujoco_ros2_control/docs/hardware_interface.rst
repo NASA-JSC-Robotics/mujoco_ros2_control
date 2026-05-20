@@ -42,7 +42,9 @@ Specify it in your URDF and point to a valid MJCF on launch:
             Defaults to 5 Hz. -->
        <param name="camera_publish_rate">6.0</param>
 
-       <!-- Optional: lidar LaserScan publish rate in Hz (all lidar sensors share one rate). -->
+       <!-- Optional: Add a maximum lidar scan publish rate of 10 Hz -->
+       <!-- Note that the underlying mujoco plugins have their own update rate, and stale messages -->
+       <!-- will not be published! -->
        <param name="lidar_publish_rate">10.0</param>
 
        <!-- Optional: run the simulator without a GUI window. Defaults to false. -->
@@ -312,6 +314,8 @@ Define the plugin instance and attach it to a site in your MJCF:
          <config key="azimuth_range" value="-0.3 0.3"/>
          <config key="elevation_range" value="0.0"/>
          <config key="max_range" value="10.0"/>
+         <config key="min_range" value="0.0"/>
+         <config key="update_rate" value="0.1"/>
        </instance>
      </plugin>
    </extension>
@@ -320,7 +324,8 @@ Define the plugin instance and attach it to a site in your MJCF:
      <plugin name="2d_lidar" instance="2d_lidar" objtype="site" objname="lidar_sensor_frame"/>
    </sensor>
 
-For a 3D lidar, increase the vertical resolution and specify an elevation range:
+For a 3D lidar, increase the vertical resolution and specify an elevation range.
+To reiterate, when the vertical resolution is 1, the wrapper publishes ``LaserScan`` messages, otherwise it publishes ``PointCloud2`` messages.
 
 .. code-block:: xml
 
@@ -331,6 +336,8 @@ For a 3D lidar, increase the vertical resolution and specify an elevation range:
          <config key="azimuth_range" value="-0.3 0.3"/>
          <config key="elevation_range" value="-1.0 1.0"/>
          <config key="max_range" value="10.0"/>
+         <config key="min_range" value="0.0"/>
+         <config key="update_rate" value="1.0"/>
        </instance>
      </plugin>
    </extension>
@@ -345,8 +352,13 @@ Plugin parameters:
 - ``azimuth_range``: min and max azimuth angles in radians (must be within [-π, π])
 - ``elevation_range``: min and max elevation angles in radians, or a single value for 2D
 - ``max_range``: maximum ray distance; hits beyond this are reported as -1
+- ``min_range``: minimum ray distance; hits below this are reported as -1
+- ``update_rate``: The time between successive scans, in seconds.
 
-To reiterate, when the vertical resolution is 1, the wrapper publishes ``LaserScan`` messages, otherwise it publishes ``PointCloud2`` messages.
+Of note, the ``update_rate`` is configurable at the plugin level to save on computation cost when stepping the simulation.
+Importantly, ``lidar_publish_rate`` in the ros2_control xacro is the rate at which the hardware interface will check if a new scan has been completed.
+The publishers will NOT publish stale data.
+If no ``update_rate`` is provided the plugin will trigger every timestep in the simulation.
 
 ros2_control Xacro
 ~~~~~~~~~~~~~~~~~~
@@ -359,21 +371,11 @@ Configure each lidar through the ``<sensor>`` tag:
    <sensor name="2d_lidar">
      <param name="frame_name">lidar_sensor_frame</param>
      <param name="lidar_topic">/scan</param>
-     <param name="resolution">24 1</param>
-     <param name="azimuth_range">-0.3 0.3</param>
-     <param name="elevation_range">0.0</param>
-     <param name="range_min">0.01</param>
-     <param name="range_max">10.0</param>
    </sensor>
 
    <sensor name="3d_lidar">
      <param name="frame_name">3d_lidar_sensor_frame</param>
      <param name="lidar_topic">/point_cloud</param>
-     <param name="resolution">24 50</param>
-     <param name="azimuth_range">-0.3 0.3</param>
-     <param name="elevation_range">-1.0 1.0</param>
-     <param name="range_min">0.01</param>
-     <param name="range_max">10.0</param>
    </sensor>
 
 Simulation Topics and Services
