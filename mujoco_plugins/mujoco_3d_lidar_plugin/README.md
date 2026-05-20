@@ -1,4 +1,4 @@
-# Lidar Plugin for Mujoco
+# 3-D Lidar Plugin for Mujoco
 
 ## [Lidar](include/mujoco_lidar_plugin/3dlidar.h)
 
@@ -9,11 +9,11 @@ The vectors are determined by the size and field of view parameters.
 
 The sensor is parametrized by 5 numbers:
 
-2. Horizontal resolution (size[0]). _positive integer_
-3. Vertical resolution (size[1]). _positive integer_
-4. Horizontal field-of-view (fov[0]). _positive float in (0, 2 $\pi$.] radians_
-5. Vertical field-of-view(fov[1]). _positive float in (0, $\pi$] radians_
-6. Maximum Range. _positive float greater than 0.0_
+1. Horizontal resolution (size[0]). _positive integer_
+2. Vertical resolution (size[1]). _positive integer_
+3. Horizontal field-of-view (fov[0]). _positive float in (0, 2 $\pi$.] radians_
+4. Vertical field-of-view(fov[1]). _positive float in (0, $\pi$] radians_
+5. Maximum Range. _positive float greater than 0.0_
 
 Field of view should always be in radians regardless of the compiler options.
 
@@ -56,7 +56,6 @@ Lidar with:
  horizontal size = 15,
  vertical size = 1
 
-
 <img src="docs/lidar_360x1.png" width="600" height="400">
 Lidar with:
  horizontal fov = 360 deg,
@@ -71,32 +70,4 @@ Lidar with:
  horizontal size = 360,
  vertical size = 4
 
-
 See [lidar.xml](example/lidar.xml) to play with the model above.
-
-## Build
-```
-git clone https://js-er-code.jsc.nasa.gov/imetro/imetro-utilities/mujoco_lidar_plugin.git
-cd mujoco_lidar_plugin
-mkdir build
-cd build
-cmake ..
-make
-```
-
-If you have the mujoco binaries in user space, set an environmetn variable MUJOCO_BIN to the location of the mujoco binaries (e.g. simulate).
-```
-make install
-```
-
-If you installed using pre-compiled binaries or installed to /usr/local/bin:
-```
-sudo make install
-```
-
-This will create a mujoco_plugin directory alongside the mujoco binaries and install the lidar plugin there.  It can now be found.
-
-## Test
-```
-simulate example/lidar.xml
-```
