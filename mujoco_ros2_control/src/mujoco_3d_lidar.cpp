@@ -113,7 +113,7 @@ void ReadVector(std::vector<T>& output, const std::string& input)
   while (getline(ss, item, delim))
   {
     CheckAttr(item);
-    output.push_back(strtod(item.c_str(), nullptr));
+    output.push_back(static_cast<T>(strtod(item.c_str(), nullptr)));
   }
 }
 
