@@ -172,12 +172,13 @@ Lidar* Lidar::Create(const mjModel* m, mjData* d, int instance)
     update_rate = std::atof(update_rate_str.c_str());
   }
 
-  printf("     resolution = %d, %d\n", resolution[0], resolution[1]);
-  printf("  azimuth_range = %.3lf - %.3lf\n", azimuth_range[0], azimuth_range[1]);
-  printf("elevation_range = %.3lf - %.3lf\n", elevation_range[0], elevation_range[1]);
-  printf("      max_range = %.3lf\n", max_range);
-  printf("      min_range = %.3lf\n", min_range);
-  printf("    update_rate = %.3lf\n", update_rate);
+  // For debugging
+  // printf("     resolution = %d, %d\n", resolution[0], resolution[1]);
+  // printf("  azimuth_range = %.3lf - %.3lf\n", azimuth_range[0], azimuth_range[1]);
+  // printf("elevation_range = %.3lf - %.3lf\n", elevation_range[0], elevation_range[1]);
+  // printf("      max_range = %.3lf\n", max_range);
+  // printf("      min_range = %.3lf\n", min_range);
+  // printf("    update_rate = %.3lf\n", update_rate);
 
   return new Lidar(m, d, instance, resolution.data(), azimuth_range.data(), elevation_range.data(), max_range,
                    min_range, update_rate);
