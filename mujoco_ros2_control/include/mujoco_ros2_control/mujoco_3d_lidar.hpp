@@ -51,10 +51,6 @@ struct Lidar3dConfig
   double range_max;
   bool is_3d;
 
-  // Maps the index of the rangefinder to the index of the MuJoCo rangefinder's data.
-  // E.g. lidar-034 -> sensor_indexes[34] will contain index of that rangefinder in mj_data_->sensordata
-  std::vector<int> sensor_indexes;
-
   // For message publishing
   std::string lidar_topic;
 
@@ -72,13 +68,16 @@ class Mujoco3dLidar
 {
 public:
   /**
-   * @brief Constructs a new MujocoLidar wrapper object.
+   * @brief Constructs a new MujocoLidar wrapper object for 3d lidar sensors.
+   *
+   * Supports both 2-D and 3-D lidar simulations, and will publish either LaserScan or PointCloud messages
+   * according to the sensor type.
    *
    * @param node Will be used to construct laserscan publishers
    * @param sim_mutex Provides synchronized access to the mujoco_data object for grabbing rangefinder data
    * @param mujoco_data MuJoCo data for the simulation
    * @param mujoco_model MuJoCo model for the simulation
-   * @param lidar_publish_rate The rate to publish all camera images, for now all images are published at the same rate.
+   * @param lidar_publish_rate The rate to publish lidar messages (either PointClouds or LaserScans).
    */
   explicit Mujoco3dLidar(rclcpp::Node::SharedPtr node, std::recursive_mutex* sim_mutex, mjData* mujoco_data,
                          mjModel* mujoco_model, double lidar_publish_rate);
@@ -107,7 +106,7 @@ private:
   void update_loop();
 
   /**
-   * @brief Updates the camera images and publishes info, images, and depth maps.
+   * @brief Pulls lidar sensor data out of the sim and publishes it.
    */
   void update();
 
@@ -125,16 +124,11 @@ private:
   // LaserScan publishing rate in Hz
   double lidar_publish_rate_;
 
-  // Rendering options for the cameras, currently hard coded to defaults
-  mjvOption mjv_opt_;
-  mjvScene mjv_scn_;
-  mjrContext mjr_con_;
-
   // Containers for ladar data and ROS constructs
   std::vector<Lidar3dConfig> lidar_sensors_;
 
   // Lidar processing thread
-  std::thread rendering_thread_;
+  std::thread processing_thread_;
   std::atomic_bool publish_lidar_;
 };
 

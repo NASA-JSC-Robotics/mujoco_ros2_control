@@ -359,8 +359,6 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
       continue;
     }
 
-    RCLCPP_INFO(node_->get_logger(), "Adding lidar sensor: '%s', idx: %d", sensor_name_maybe, i);
-
     std::optional<Lidar3dConfig> new_data_maybe = get_lidar_config(hardware_info, sensor_name_maybe);
     if (!new_data_maybe.has_value())
     {
@@ -417,17 +415,17 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
 
 void Mujoco3dLidar::init()
 {
-  // Start the rendering thread process
+  // Start the background thread process
   publish_lidar_ = true;
-  rendering_thread_ = std::thread(&Mujoco3dLidar::update_loop, this);
+  processing_thread_ = std::thread(&Mujoco3dLidar::update_loop, this);
 }
 
 void Mujoco3dLidar::close()
 {
   publish_lidar_ = false;
-  if (rendering_thread_.joinable())
+  if (processing_thread_.joinable())
   {
-    rendering_thread_.join();
+    processing_thread_.join();
   }
 }
 
