@@ -159,17 +159,29 @@ Lidar* Lidar::Create(const mjModel* m, mjData* d, int instance)
     mju_error("Lidar max range must be greater than 0.0");
     return nullptr;
   }
+  mjtNum update_rate = 0.0;
+  std::string update_rate_str = std::string(mj_getPluginConfig(m, instance, "update_rate"));
+  if (!update_rate_str.empty())
+  {
+    update_rate = std::atof(update_rate_str.c_str());
+  }
+
   printf("     resolution = %d, %d\n", resolution[0], resolution[1]);
   printf("  azimuth_range = %.3lf - %.3lf\n", azimuth_range[0], azimuth_range[1]);
   printf("elevation_range = %.3lf - %.3lf\n", elevation_range[0], elevation_range[1]);
   printf("      max_range = %.3lf\n", max_range);
+  printf("    update_rate = %.3lf\n", update_rate);
 
-  return new Lidar(m, d, instance, resolution.data(), azimuth_range.data(), elevation_range.data(), max_range);
+  return new Lidar(m, d, instance, resolution.data(), azimuth_range.data(), elevation_range.data(), max_range,
+                   update_rate);
 }
 
 Lidar::Lidar(const mjModel* m, mjData* d, int instance, int resolution[2], mjtNum azimuth_range[2],
-             mjtNum elevation_range[2], mjtNum max_range)
-  : resolution_{ resolution[0], resolution[1] }, max_range_(max_range)
+             mjtNum elevation_range[2], mjtNum max_range, mjtNum update_rate)
+  : resolution_{ resolution[0], resolution[1] }
+  , max_range_(max_range)
+  , update_period_(update_rate > 0.0 ? 1.0 / update_rate : 0.0)
+  , last_compute_time_(-1.0)
 {
   // Make sure sensor is attached to a site.
   for (int i = 0; i < m->nsensor; ++i)
@@ -225,6 +237,17 @@ void Lidar::Reset(const mjModel* m, int instance)
 
 void Lidar::Compute(const mjModel* m, mjData* d, int instance)
 {
+  // Throttle to the update rate, if it exists and is positive
+  if (update_period_ > 0.0 && (d->time - last_compute_time_) < update_period_)
+  {
+    return;
+  }
+  last_compute_time_ = d->time;
+
+  // Essentially a time stamp that can be accessed from consumers to know when the last
+  // reading was taken
+  d->plugin_state[m->plugin_stateadr[instance]] = last_compute_time_;
+
   mjtByte* geom_group = nullptr;
   mjtByte flg_static = -1;
   int body_exclude = -1;
@@ -353,8 +376,8 @@ void Lidar::RegisterPlugin()
   plugin.name = "mujoco.plugin.lidar";
   plugin.capabilityflags |= mjPLUGIN_SENSOR;
 
-  // Parameterized by 2 attributes.
-  const char* attributes[] = { "resolution", "azimuth_range", "elevation_range", "max_range" };
+  // Parameterizable attributes
+  const char* attributes[] = { "resolution", "azimuth_range", "elevation_range", "max_range", "update_rate" };
   plugin.nattribute = sizeof(attributes) / sizeof(attributes[0]);
   plugin.attributes = attributes;
 
