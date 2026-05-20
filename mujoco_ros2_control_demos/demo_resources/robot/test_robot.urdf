@@ -211,6 +211,13 @@
     <origin rpy="0 0 -1.5708" xyz="1.0 2.0 0"/>
   </joint>
 
+  <link name="3d_lidar_sensor_frame" />
+  <joint name="3d_lidar_sensor_link" type="fixed">
+    <parent link="world"/>
+    <child link="3d_lidar_sensor_frame"/>
+    <origin rpy="0 0 1.5708" xyz="1.0 -2.0 0"/>
+  </joint>
+
   <!-- To test the model generation from tags within the URDF, we test that when both -->
   <!-- `use_mjcf_from_topic` and `use_pid` args are set to true -->
   <xacro:if value="$(eval use_mjcf_from_topic)">
@@ -247,8 +254,33 @@
             <joint joint1="gripper_left_finger_joint" joint2="gripper_right_finger_joint" polycoef="0 -1 0 0 0" solimp="0.95 0.99 0.001" solref="0.005 1"/>
           </equality>
 
+          <!-- 2-D Lidar Sensor -->
+          <extension>
+            <plugin plugin="mujoco.plugin.lidar">
+                <instance name="2d_lidar">
+                    <config key="resolution" value="24 1"/>
+                    <config key="azimuth_range" value="-0.3 0.3"/>
+                    <config key="elevation_range" value="0.0"/>
+                    <config key="max_range" value="10.0"/>
+                </instance>
+            </plugin>
+          </extension>
           <sensor>
-            <rangefinder name="lidar" site="rf" />
+            <plugin name="2d_lidar" instance="2d_lidar" objtype="site" objname="lidar_sensor_frame"/>
+          </sensor>
+          <!-- 3-D Lidar Sensor -->
+          <extension>
+            <plugin plugin="mujoco.plugin.lidar">
+                <instance name="3d_lidar">
+                    <config key="resolution" value="24 24"/>
+                    <config key="azimuth_range" value="-0.3 0.3"/>
+                    <config key="elevation_range" value="-0.3 0.3"/>
+                    <config key="max_range" value="10.0"/>
+                </instance>
+            </plugin>
+          </extension>
+          <sensor>
+            <plugin name="3d_lidar" instance="3d_lidar" objtype="site" objname="3d_lidar_sensor_frame"/>
           </sensor>
         </raw_inputs>
 
@@ -260,13 +292,6 @@
           <!-- The camera with the specified values will be added at the specified site name. -->
           <!-- The position and quaterinion will be filled in by the converter -->
           <camera site="camera_color_optical_frame" name="camera" fovy="58" mode="fixed" resolution="640 480"/>
-
-          <!-- Adds a lidar tag below a site tag to support a lidar sensor. -->
-          <!-- In the URDF, we assume that that the sensor frame has the Z-axis pointed directly up in the sensor -->
-          <!-- frame. This tag will create rangefinders in the MJCF between min_angle and max_angle at each -->
-          <!-- angle_increment rotated about the replicate frame's Y axis. The hardware intercface then combines -->
-          <!-- them into a single LaserScan message. -->
-          <lidar ref_site="lidar_sensor_frame" sensor_name="rf" min_angle="-0.3" max_angle="0.3" angle_increment="0.025" />
 
           <!-- The element with the type and name as listed below will be modified with the remaining attributes -->
           <!-- If the attribute already existed, it will be overwritten -->
@@ -326,7 +351,7 @@
       <!-- Uncomment this to use the keyframe from shown file as the starting configuration. -->
       <!-- <param name="override_start_position_file">$(find mujoco_ros2_control_demos)/config/start_positions.xml</param> -->
 
-      <!-- Override the slowdown settings in the Simulate App and run at 3x speed -->
+      <!-- Optionally override the simulate apps speed and run faster -->
       <param name="sim_speed_factor">1.0</param>
 
       <!-- Uncomment to start the simulation at a specific keyframe defined in the MJCF -->
@@ -339,7 +364,7 @@
       <param name="camera_publish_rate">6.0</param>
 
       <!-- Publish lidar scans at 10 hz -->
-      <param name="lidar_publish_rate">1.0</param>
+      <param name="lidar_publish_rate">10.0</param>
     </hardware>
     <joint name="joint1">
       <command_interface name="position"/>
@@ -427,18 +452,24 @@
       <param name="depth_topic">/camera/aligned_depth_to_color/image_raw</param>
     </sensor>
 
-    <!-- Lidar sensors are matched to a set of rangefinder sensors in the MJCF, which should be -->
-    <!-- generated with the "<lidar>" inputs in the conversion script. The consiste of N rangefinders -->
-    <!-- and will generally be of the form "<sensor_name>-01". These parameters should line up with -->
-    <!-- those documented in the laserscan message. -->
-    <sensor name="lidar">
+    <!-- Lidar sensors are matched to 3-D Lidar sensors in the MJCF -->
+    <sensor name="2d_lidar">
       <param name="frame_name">lidar_sensor_frame</param>
-      <param name="angle_increment">0.025</param>
-      <param name="min_angle">-0.3</param>
-      <param name="max_angle">0.3</param>
-      <param name="range_min">0.05</param>
-      <param name="range_max">10</param>
-      <param name="laserscan_topic">/scan</param>
+      <param name="lidar_topic">/scan</param>
+      <param name="resolution">24 1</param>
+      <param name="azimuth_range">-0.3 0.3</param>
+      <param name="elevation_range">0.0</param>
+      <param name="range_min">0.01</param>
+      <param name="range_max">10.0</param>
+    </sensor>
+    <sensor name="3d_lidar">
+      <param name="frame_name">3d_lidar_sensor_frame</param>
+      <param name="lidar_topic">/point_cloud</param>
+      <param name="resolution">24 24</param>
+      <param name="azimuth_range">-0.3 0.3</param>
+      <param name="elevation_range">-0.3 0.3</param>
+      <param name="range_min">0.01</param>
+      <param name="range_max">10.0</param>
     </sensor>
   </ros2_control>
 </robot>
