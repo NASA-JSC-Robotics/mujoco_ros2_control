@@ -542,16 +542,15 @@ def get_processed_mujoco_inputs(processed_inputs_element):
     """
     Returns the processed inputs as dictionaries from the specified processed_inputs_element.
 
-    Right now this supports tags for decomposing meshes and attaching cameras or lidar sensors to sites.
+    Right now this supports tags for decomposing meshes and attaching cameras.
     """
 
     decompose_dict = dict()
     cameras_dict = dict()
     modify_element_dict = dict()
-    lidar_dict = dict()
 
     if not processed_inputs_element:
-        return decompose_dict, cameras_dict, modify_element_dict, lidar_dict
+        return decompose_dict, cameras_dict, modify_element_dict
 
     for child in processed_inputs_element.childNodes:
         if child.nodeType != child.ELEMENT_NODE:
@@ -580,40 +579,6 @@ def get_processed_mujoco_inputs(processed_inputs_element):
 
             print(f"Will add camera ({camera_name}) for site ({site_name})")
 
-        # Grab replicates
-        if child.nodeType == child.ELEMENT_NODE and child.tagName == "lidar":
-            lidar_element = child
-            site_name = lidar_element.getAttribute("ref_site")
-            sensor_name = lidar_element.getAttribute("sensor_name")
-            min_angle = float(lidar_element.getAttribute("min_angle"))
-            max_angle = float(lidar_element.getAttribute("max_angle"))
-            angle_increment = float(lidar_element.getAttribute("angle_increment"))
-            if angle_increment <= 0:
-                raise ValueError("'angle_increment' must be greater than zero for a 'lidar' tag!")
-
-            num_sensors = int((max_angle - min_angle) / angle_increment) + 1
-
-            doc = minidom.Document()
-            site = doc.createElement("site")
-            site.setAttribute("name", sensor_name)
-            site.setAttribute("pos", "0.0 0.0 0.0")
-            site.setAttribute("quat", "0.0 0.0 0.0 1.0")
-
-            replicate = doc.createElement("replicate")
-            replicate.setAttribute("site", site_name)
-            replicate.setAttribute("count", str(num_sensors))
-            replicate.setAttribute("sep", "-")
-            replicate.setAttribute("offset", "0 0 0")
-            replicate.setAttribute("euler", f"0 {angle_increment} 0")
-            replicate.setAttribute("min_angle", lidar_element.getAttribute("min_angle"))
-
-            replicate.appendChild(site)
-
-            # We don't need this in the MJCF
-            lidar_dict[site_name] = replicate
-
-            print(f"Will add replicate tag at site ({site_name})")
-
         # Grab modify element information
         if child.nodeType == child.ELEMENT_NODE and child.tagName == "modify_element":
             modify_element_element = child
@@ -635,7 +600,7 @@ def get_processed_mujoco_inputs(processed_inputs_element):
             for key, value in attr_dict.items():
                 print(f"  {key}: {value}")
 
-    return decompose_dict, cameras_dict, modify_element_dict, lidar_dict
+    return decompose_dict, cameras_dict, modify_element_dict
 
 
 def parse_inputs_xml(filename=None):
@@ -668,18 +633,6 @@ def parse_inputs_xml(filename=None):
             <!-- The camera with the specified values will be added at the specified site name. -->
             <!-- The position and quaterinion will be filled in by the converter -->
             <camera site="camera_color_optical_frame" name="camera" fovy="58" mode="fixed" resolution="640 480"/>
-
-            <!-- Adds a lidar tag below a site tag to support a lidar sensor. -->
-            <!-- In the URDF, we assume that that the sensor frame has the Z-axis pointed directly up in the sensor -->
-            <!-- frame. This tag will create rangefinders in the MJCF between min_angle and max_angle at each -->
-            <!-- angle_increment, and the drivers combine them into a single LaserScan message. -->
-            <lidar ref_site="lidar_sensor_frame"
-                   sensor_name="rf"
-                   min_angle="0"
-                   max_angle="1.57"
-                   angle_increment="0.025"
-            />
-
         </processed_inputs>
     </mujoco_inputs>
     """
@@ -1026,66 +979,6 @@ def add_cameras_from_sites(dom, cameras_dict):
     unmatched = set(cameras_dict.keys()) - matched_sites
     if unmatched:
         raise ValueError(f"Camera site(s) not found in the MJCF: {', '.join(sorted(unmatched))}")
-
-    return dom
-
-
-def add_lidar_from_sites(dom, lidar_dict):
-    """
-    Creates a replicates tag from MuJoCo inputs below the specified site name and lidar tag.
-
-    Replicates must be under to a body, so we add a massless body with an identical transform to support
-    attaching the sensor's replicates.
-
-    We assume that the site in the URDF has the Z-axis pointed up, whereas the rangefinder's sensor has the
-    Z-axis pointed along the sensor and rotate about the Y-axis. For the sake of this conversion, we assume
-    that the first replicate's Z-axis is offset from the URDF's X-axis by `min_angle`. So we rotate the
-    position from the matched site in the URDF accordingly.
-
-    If you draw this out, the XYZ euler transform from one to the other should be:
-    [pi/2, pi/2, 0] * [0, min_angle, 0].
-    """
-
-    x_form = [0.5, 0.5, 0.5, 0.5]  # pi/2 around x, pi/2 about y
-    matched_sites = set()
-
-    # Construct all lidar sensor bodies for relevant sites in xml and add them as children to the same parent
-    for node in dom.getElementsByTagName("site"):
-        site_name = node.getAttribute("name")
-        if site_name in lidar_dict:
-            matched_sites.add(site_name)
-            replicate = lidar_dict[site_name]
-
-            # Handle conversion of the frames by applying the site transform, rangefinder transform, then
-            # min_angle transform (rotation about Y)
-            site_quat = [float(x) for x in node.getAttribute("quat").split()]
-            min_angle = float(replicate.getAttribute("min_angle"))
-            min_angle_quat = euler_to_quaternion(0, min_angle, 0)
-            tmp_quat = multiply_quaternion(site_quat, x_form)
-            lidar_quat = multiply_quaternion(tmp_quat, min_angle_quat)
-
-            # Create the new body element and add the replicate as a child
-            new_body = dom.createElement("body")
-            new_body.setAttribute("name", site_name + "_lidar_body")
-            new_body.setAttribute("pos", node.getAttribute("pos"))
-            new_body.setAttribute("quat", " ".join(map(str, lidar_quat)))
-
-            # No longer need the tag
-            replicate.removeAttribute("min_angle")
-            new_body.appendChild(replicate)
-
-            print(f"Adding replicates to {site_name}, attributes:")
-            print("    pos: ", new_body.getAttribute("pos"))
-            print("    quat: ", new_body.getAttribute("quat"))
-            for i in range(replicate.attributes.length):
-                attr = replicate.attributes.item(i)
-                print(f"  {attr.name}: {attr.value}")
-
-            node.parentNode.appendChild(new_body)
-
-    unmatched = set(lidar_dict.keys()) - matched_sites
-    if unmatched:
-        raise ValueError(f"Lidar site(s) not found in the MJCF: {', '.join(sorted(unmatched))}")
 
     return dom
 
