@@ -12,11 +12,13 @@
 namespace mujoco::plugin::lidar
 {
 
-// The sensor has 6 parameters:
-//  2. (int) Horizontal resolution.
-//  3. (int) Vertical resolution.
-//  4. (double) Horizontal field-of-view (fov_x), in degrees.
-//  5. (double) Vertical field-of-view (fov_y), in degrees.
+// The sensor has a number of parameters:
+//  1. (int) Horizontal resolution.
+//  2. (int) Vertical resolution.
+//  3. (double) Horizontal field-of-view (fov_x), in degrees.
+//  4. (double) Vertical field-of-view (fov_y), in degrees.
+//  5. (double) Maximum range, in m.
+//  5. (double) Rate at which to update sensor readings, in seconds (optional).
 
 class Lidar
 {
@@ -36,10 +38,12 @@ public:
   mjtNum max_range_;   // max range of lidar
 
 private:
-  Lidar(const mjModel* m, mjData* d, int instance, int* size, mjtNum* azimuth_range, mjtNum* elevation_range,
-        mjtNum max_range);
+  Lidar(const mjModel* m, mjData* d, int instance, int resolution[2], mjtNum azimuth_range[2],
+        mjtNum elevation_range[2], mjtNum max_range, mjtNum update_rate);
   std::vector<mjtNum> vectors_;
   std::vector<mjtNum> rotated_vectors_;
+  mjtNum update_period_;
+  mjtNum last_compute_time_;
 };
 
 }  // namespace mujoco::plugin::lidar
