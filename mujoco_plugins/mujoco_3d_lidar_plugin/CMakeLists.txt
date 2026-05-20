@@ -30,7 +30,6 @@ target_sources(mujoco_plugin_lidar PRIVATE ${SRCS})
 target_link_libraries(mujoco_plugin_lidar PRIVATE mujoco::mujoco)
 target_compile_options(mujoco_plugin_lidar PRIVATE ${mujoco_SILENCE_COMPILER_WARNINGS})
 
-
 add_executable(list_plugins test/list_plugins.cpp)
 target_compile_options(list_plugins PRIVATE ${mujoco_SILENCE_COMPILER_WARNINGS})
 target_link_libraries(
@@ -46,7 +45,6 @@ target_link_libraries(
   glfw
 )
 
-
 install(
   TARGETS mujoco_plugin_lidar
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -57,7 +55,8 @@ install(TARGETS mujoco_plugin_lidar
   DESTINATION ${mujoco_ros2_control_BIN_DIR}/mujoco_plugin
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-find_program(mujoco_SIMULATE simulate)
+# Duplicate the install to be next to the simulate application so this works there, as well.
+find_program(mujoco_SIMULATE NAMES simulate mujoco-simulate)
 message("mujoco_SIMULATE = ${mujoco_SIMULATE}")
 
 cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
@@ -68,6 +67,5 @@ install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
 install(TARGETS mujoco_plugin_lidar
   DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-
 
 ament_package()
