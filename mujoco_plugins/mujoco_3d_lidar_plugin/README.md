@@ -7,14 +7,15 @@ This sensor uses ray casting to simulate lidar.
 A `lidar` sensor is associated with a site and finds the nearest collision points from the site along a set of vectors.
 The vectors are determined by the size and field of view parameters.
 
-The sensor is parametrized by 6 numbers:
+The sensor is parametrizable with the following:
 
 1. Horizontal resolution (size[0]). _positive integer_
 2. Vertical resolution (size[1]). _positive integer_
 3. Horizontal field-of-view (fov[0]). _positive float in (0, 2 $\pi$.] radians_
 4. Vertical field-of-view(fov[1]). _positive float in (0, $\pi$] radians_
 5. Maximum Range. _positive float greater than 0.0_
-6. Update Rate. (Optional) The period at which to take readings, in seconds.
+6. Minimum Range. _positive float greater than 0.0_ (Optional, defaults to 0.0)
+7. Update Rate. _positive float greater than 0.0_ (Optional, defaults to 0.0)
 
 Field of view should always be in radians regardless of the compiler options.
 
@@ -36,6 +37,7 @@ These parameters are passed as plugin config attributes:
       <config key="size" value="360 10"/>
       <config key="fov" value="6.2832 0.7854"/>
       <config key="max_range" value="13.0"/>
+      <config key="min_range" value="1.0"/>
       <config key="update_rate" value="1.0"/>
     </plugin>
   </sensor>

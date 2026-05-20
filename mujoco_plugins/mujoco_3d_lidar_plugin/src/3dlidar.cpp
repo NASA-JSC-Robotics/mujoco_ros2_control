@@ -159,6 +159,12 @@ Lidar* Lidar::Create(const mjModel* m, mjData* d, int instance)
     mju_error("Lidar max range must be greater than 0.0");
     return nullptr;
   }
+  mjtNum min_range = 0.0;
+  std::string min_range_str = std::string(mj_getPluginConfig(m, instance, "min_range"));
+  if (!min_range_str.empty())
+  {
+    min_range = std::atof(min_range_str.c_str());
+  }
   mjtNum update_rate = 0.0;
   std::string update_rate_str = std::string(mj_getPluginConfig(m, instance, "update_rate"));
   if (!update_rate_str.empty())
@@ -170,16 +176,18 @@ Lidar* Lidar::Create(const mjModel* m, mjData* d, int instance)
   printf("  azimuth_range = %.3lf - %.3lf\n", azimuth_range[0], azimuth_range[1]);
   printf("elevation_range = %.3lf - %.3lf\n", elevation_range[0], elevation_range[1]);
   printf("      max_range = %.3lf\n", max_range);
+  printf("      min_range = %.3lf\n", min_range);
   printf("    update_rate = %.3lf\n", update_rate);
 
   return new Lidar(m, d, instance, resolution.data(), azimuth_range.data(), elevation_range.data(), max_range,
-                   update_rate);
+                   min_range, update_rate);
 }
 
 Lidar::Lidar(const mjModel* m, mjData* d, int instance, int resolution[2], mjtNum azimuth_range[2],
-             mjtNum elevation_range[2], mjtNum max_range, mjtNum update_rate)
+             mjtNum elevation_range[2], mjtNum max_range, mjtNum min_range, mjtNum update_rate)
   : resolution_{ resolution[0], resolution[1] }
   , max_range_(max_range)
+  , min_range_(min_range)
   , update_period_(update_rate > 0.0 ? 1.0 / update_rate : 0.0)
   , last_compute_time_(-1.0)
 {
@@ -302,7 +310,7 @@ void Lidar::Compute(const mjModel* m, mjData* d, int instance)
 
   for (int32_t idx = 0; idx < resolution_[0] * resolution_[1]; ++idx)
   {
-    if (sensordata[idx] >= max_range_)
+    if (sensordata[idx] >= max_range_ || sensordata[idx] < min_range_)
     {
       sensordata[idx] = -1.0;
     }
@@ -377,7 +385,9 @@ void Lidar::RegisterPlugin()
   plugin.capabilityflags |= mjPLUGIN_SENSOR;
 
   // Parameterizable attributes
-  const char* attributes[] = { "resolution", "azimuth_range", "elevation_range", "max_range", "update_rate" };
+  const char* attributes[] = {
+    "resolution", "azimuth_range", "elevation_range", "max_range", "min_range", "update_rate"
+  };
   plugin.nattribute = sizeof(attributes) / sizeof(attributes[0]);
   plugin.attributes = attributes;
 
