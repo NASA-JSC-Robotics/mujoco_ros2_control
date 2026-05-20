@@ -230,13 +230,6 @@ Sensor and ROS mapping
   ``camera`` ``name`` placed in ``processed_inputs`` so the plugin can map the MJCF camera to a
   ROS topic (see ``test_robot.urdf``).
 
-- Lidar: the ``mujoco.plugin.lidar`` plugin handles raycasting natively via ``mj_multiRay``.
-  The MJCF sensor name must match the ``<sensor name="...">`` in the ``ros2_control`` xacro.
-  Each sensor should specify ``resolution``, ``azimuth_range``, ``elevation_range``,
-  ``range_min``, ``range_max``, and ``lidar_topic`` parameters. When the vertical resolution
-  is 1, the hardware interface publishes a ``LaserScan`` message; otherwise it publishes a
-  ``PointCloud2`` message.
-
 Practical tips and conventions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -280,6 +273,8 @@ map MJCF sensors to ROS topics.
              <config key="azimuth_range" value="-0.3 0.3"/>
              <config key="elevation_range" value="0.0"/>
              <config key="max_range" value="10.0"/>
+             <config key="min_range" value="0.0"/>
+             <config key="update_rate" value="0.1"/>
            </instance>
          </plugin>
        </extension>
@@ -307,11 +302,6 @@ map MJCF sensors to ROS topics.
      <sensor name="lidar">
        <param name="frame_name">lidar_frame</param>
        <param name="lidar_topic">/scan</param>
-       <param name="resolution">24 1</param>
-       <param name="azimuth_range">-0.3 0.3</param>
-       <param name="elevation_range">0.0</param>
-       <param name="range_min">0.05</param>
-       <param name="range_max">10.0</param>
      </sensor>
    </ros2_control>
 
