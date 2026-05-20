@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 project(mujoco_3d_lidar)
 
-find_package(ament_cmake REQUIRED)
+find_package(ament_cmake QUIET)
 # Link MuJoCo via the vendor package
 find_package(mujoco_vendor REQUIRED)
 
@@ -48,13 +48,18 @@ install(
 )
 
 # Duplicate the install to be next to the simulate application so this works there, as well.
+# This will also ensure it is pulled in by mujoco_ros2_control when that executable is
+# compiled.
 find_program(mujoco_SIMULATE NAMES simulate mujoco-simulate)
-message("mujoco_SIMULATE = ${mujoco_SIMULATE}")
-message("mujoco_BIN_PATH = ${mujoco_BIN_PATH}")
-cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
-install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
-install(TARGETS mujoco_plugin_lidar DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
+if(mujoco_SIMULATE)
+  cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
+  install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
+  install(TARGETS mujoco_plugin_lidar DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
+endif()
 
-ament_export_targets(export_${PROJECT_NAME})
-ament_export_dependencies(mujoco_vendor)
-ament_package()
+# Optionally export
+if(ament_cmake_FOUND)
+  ament_export_targets(export_${PROJECT_NAME})
+  ament_export_dependencies(mujoco_vendor)
+  ament_package()
+endif()

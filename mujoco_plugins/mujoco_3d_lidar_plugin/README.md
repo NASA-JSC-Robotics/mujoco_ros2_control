@@ -71,3 +71,25 @@ Lidar with:
  vertical size = 4
 
 See [lidar.xml](example/lidar.xml) to play with the model above.
+
+## Standalone Build
+
+This package is intended to be build alongside the `mujoco_ros2_control` packages.
+However, we maintain a standalone build in the event that users want to pull this out and use it separately.
+To compile, ensure `mujoco_vendor` is installed and available.
+
+From this package's root:
+
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+This will create a mujoco_plugin directory alongside the mujoco binaries and install the lidar plugin there.
+It can now be found.
+
+```bash
+simulate example/lidar.xml
+```
