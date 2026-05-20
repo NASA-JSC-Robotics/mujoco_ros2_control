@@ -291,41 +291,89 @@ Lidar
 -----
 
 MuJoCo does not include native lidar support.
-This package implements a ROS 2-like lidar by wrapping sets of
-`rangefinders <https://mujoco.readthedocs.io/en/stable/XMLreference.html#sensor-rangefinder>`_ together.
+This package implements lidar through a custom MuJoCo sensor plugin in ``mujoco_plugins` (``mujoco.plugin.lidar``) that uses ``mj_multiRay`` to cast rays each simulation step.
+The plugin supports both 2D (single-row) and 3D (multi-row) configurations, publishing
+`LaserScan <https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/LaserScan.msg>`_ or
+`PointCloud2 <https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/PointCloud2.msg>`_ messages respectively.
 
-MuJoCo rangefinders measure the distance to the nearest surface along the positive ``Z`` axis of the sensor site.
-The first rangefinder's ``Z`` axis (e.g. ``rf-00``) must align with the ROS 2 lidar sensor's positive ``X`` axis,
-consistent with the `LaserScan <https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/LaserScan.msg#L10>`_ convention.
+The plugin rays are cast along the sensor site's local ``X`` axis, with azimuth sweeping in the XY plane and elevation sweeping toward ``Z``.
 
-Use the ``replicate`` tag to add N sites at regular angular offsets:
+MJCF Configuration
+^^^^^^^^^^^^^^^^^^
 
-.. code-block:: xml
-
-   <replicate count="12" sep="-" offset="0 0 0" euler="0 0.025 0">
-     <site name="rf" size="0.01" pos="0.0 0.0 0.0" quat="0.0 0.0 0.0 1.0"/>
-   </replicate>
-
-Attach rangefinder sensors to each site:
+Define the plugin instance and attach it to a site in your MJCF:
 
 .. code-block:: xml
+
+   <extension>
+     <plugin plugin="mujoco.plugin.lidar">
+       <instance name="2d_lidar">
+         <config key="resolution" value="24 1"/>
+         <config key="azimuth_range" value="-0.3 0.3"/>
+         <config key="elevation_range" value="0.0"/>
+         <config key="max_range" value="10.0"/>
+       </instance>
+     </plugin>
+   </extension>
 
    <sensor>
-     <rangefinder name="lidar" site="rf"/>
+     <plugin name="2d_lidar" instance="2d_lidar" objtype="site" objname="lidar_sensor_frame"/>
    </sensor>
 
-Configure the lidar through ``ros2_control`` xacro:
+For a 3D lidar, increase the vertical resolution and specify an elevation range:
 
 .. code-block:: xml
 
-   <sensor name="lidar">
+   <extension>
+     <plugin plugin="mujoco.plugin.lidar">
+       <instance name="3d_lidar">
+         <config key="resolution" value="24 50"/>
+         <config key="azimuth_range" value="-0.3 0.3"/>
+         <config key="elevation_range" value="-1.0 1.0"/>
+         <config key="max_range" value="10.0"/>
+       </instance>
+     </plugin>
+   </extension>
+
+   <sensor>
+     <plugin name="3d_lidar" instance="3d_lidar" objtype="site" objname="3d_lidar_sensor_frame"/>
+   </sensor>
+
+Plugin parameters:
+
+- ``resolution``: horizontal and vertical ray counts (e.g. ``"24 1"`` for 2D, ``"24 50"`` for 3D)
+- ``azimuth_range``: min and max azimuth angles in radians (must be within [-π, π])
+- ``elevation_range``: min and max elevation angles in radians, or a single value for 2D
+- ``max_range``: maximum ray distance; hits beyond this are reported as -1
+
+To reiterate, when the vertical resolution is 1, the wrapper publishes ``LaserScan`` messages, otherwise it publishes ``PointCloud2`` messages.
+
+ros2_control Xacro
+^^^^^^^^^^^^^^^^^^
+
+The sensor name in the ``ros2_control`` xacro **must match** the sensor name in the MJCF.
+Configure each lidar through the ``<sensor>`` tag:
+
+.. code-block:: xml
+
+   <sensor name="2d_lidar">
      <param name="frame_name">lidar_sensor_frame</param>
-     <param name="angle_increment">0.025</param>
-     <param name="min_angle">-0.3</param>
-     <param name="max_angle">0.3</param>
-     <param name="range_min">0.05</param>
-     <param name="range_max">10</param>
-     <param name="laserscan_topic">/scan</param>
+     <param name="lidar_topic">/scan</param>
+     <param name="resolution">24 1</param>
+     <param name="azimuth_range">-0.3 0.3</param>
+     <param name="elevation_range">0.0</param>
+     <param name="range_min">0.01</param>
+     <param name="range_max">10.0</param>
+   </sensor>
+
+   <sensor name="3d_lidar">
+     <param name="frame_name">3d_lidar_sensor_frame</param>
+     <param name="lidar_topic">/point_cloud</param>
+     <param name="resolution">24 50</param>
+     <param name="azimuth_range">-0.3 0.3</param>
+     <param name="elevation_range">-1.0 1.0</param>
+     <param name="range_min">0.01</param>
+     <param name="range_max">10.0</param>
    </sensor>
 
 Simulation Topics and Services
