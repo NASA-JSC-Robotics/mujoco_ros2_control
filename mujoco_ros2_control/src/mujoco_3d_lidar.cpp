@@ -363,6 +363,11 @@ void Mujoco3dLidar::update()
     }
     lidar.last_published_time = lidar.last_compute_time;
 
+    // Convert the update time to a ROS time stamp
+    int32_t sec = static_cast<int32_t>(std::floor(lidar.last_compute_time));
+    uint32_t nsec = static_cast<uint32_t>((lidar.last_compute_time - sec) * 1e9);
+    rclcpp::Time stamp(sec, nsec, RCL_ROS_TIME);
+
     // Handle 3d lidar sensors
     if (lidar.is_3d && (static_cast<int>(lidar.vectors.size()) == lidar.resolution[0] * lidar.resolution[1]))
     {
@@ -390,7 +395,7 @@ void Mujoco3dLidar::update()
         ++iterY;
         ++iterZ;
       }
-      lidar.point_cloud_msg.header.stamp = node_->now();
+      lidar.point_cloud_msg.header.stamp = stamp;
       lidar.pointcloud_pub->publish(lidar.point_cloud_msg);
     }
     else if (!lidar.is_3d)
@@ -400,13 +405,8 @@ void Mujoco3dLidar::update()
         lidar.laser_scan_msg.ranges[i] = static_cast<float>(mj_lidar_data_[lidar.sensor_adr + i]);
       }
 
-      // Apply range limits to the copied data
-      std::transform(lidar.laser_scan_msg.ranges.begin(), lidar.laser_scan_msg.ranges.end(),
-                     lidar.laser_scan_msg.ranges.begin(),
-                     [&](auto range) { return (range < lidar.range_min || range > lidar.range_max) ? -1.0 : range; });
-
       // Publish
-      lidar.laser_scan_msg.header.stamp = node_->now();
+      lidar.laser_scan_msg.header.stamp = stamp;
       lidar.scan_pub->publish(lidar.laser_scan_msg);
     }
   }
