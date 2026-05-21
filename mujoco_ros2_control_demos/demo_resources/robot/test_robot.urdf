@@ -267,6 +267,9 @@
                 </instance>
             </plugin>
           </extension>
+          <sensor>
+            <plugin name="2d_lidar" instance="2d_lidar" objtype="site" objname="lidar_sensor_frame"/>
+          </sensor>
           <!-- 3-D Lidar Sensor, published at 1 hz -->
           <extension>
             <plugin plugin="mujoco.plugin.lidar">
