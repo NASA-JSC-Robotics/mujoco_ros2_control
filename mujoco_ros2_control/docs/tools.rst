@@ -170,7 +170,14 @@ Main sub-elements
 ``processed_inputs``
    Convenience tags that the converter understands and processes into valid MJCF entries.
    Use these when the converter must transform or generate MJCF elements (for example,
-   cameras, lidar rangefinders, mesh decomposition hints, or targeted modifications).
+   cameras, mesh decomposition hints, or targeted modifications).
+
+   .. note::
+
+      Lidar is now implemented as a standalone MuJoCo sensor plugin (``mujoco.plugin.lidar``)
+      and is no longer generated through ``processed_inputs``.
+      Refer to the documentation below and the :doc:`hardware interface docs <hardware_interface>` for details.
+
    Common processed tags (supported by the demo converter):
 
    - ``decompose_mesh`` (attributes: ``mesh_name``, ``threshold``) — requests mesh decomposition
@@ -182,12 +189,6 @@ Main sub-elements
      converter will fill position/quaternion from the URDF link pose. ``resolution`` is two integers
      separated by a space (e.g. ``640 480``). The ``name`` must match the ``sensor`` name declared
      in the ``ros2_control`` block if you plan to publish images to ROS topics.
-   - ``lidar`` (attributes: ``ref_site``, ``sensor_name``, ``min_angle``, ``max_angle``,
-     ``angle_increment``) — generates a set of MJCF ``rangefinder`` sensors placed around
-     ``ref_site``. The converter rotates rangefinders about the replicate frame's Y axis between
-     ``min_angle`` and ``max_angle`` at the step size ``angle_increment``. The generated
-     rangefinders will be named by the ``sensor_name`` base (e.g. ``rf-01``, ``rf-02``, ...); ROS-facing
-     ``sensor`` entries in the ``ros2_control`` section should use the same base name.
    - ``modify_element`` (attributes: ``type``, ``name``, ...any MJCF attributes...) — finds the
      generated MJCF element by ``type`` (for example ``joint`` or ``body``) and ``name`` and sets or
      overwrites the provided attributes. Useful to tweak physics properties like ``frictionloss``,
@@ -229,10 +230,12 @@ Sensor and ROS mapping
   ``camera`` ``name`` placed in ``processed_inputs`` so the plugin can map the MJCF camera to a
   ROS topic (see ``test_robot.urdf``).
 
-- Lidar: the converter produces multiple MJCF ``rangefinder`` sensors. The URDF ``sensor`` for
-  the lidar should provide ``angle_increment``, ``min_angle``, ``max_angle``, ``range_min``,
-  ``range_max``, and ``laserscan_topic`` parameters. The hardware interface will combine the set of
-  generated rangefinders into a single ROS ``LaserScan`` message.
+- Lidar: the ``mujoco.plugin.lidar`` plugin handles raycasting natively via ``mj_multiRay``.
+  The MJCF sensor name must match the ``<sensor name="...">`` in the ``ros2_control`` xacro.
+  Each sensor should specify ``resolution``, ``azimuth_range``, ``elevation_range``,
+  ``range_min``, ``range_max``, and ``lidar_topic`` parameters. When the vertical resolution
+  is 1, the hardware interface publishes a ``LaserScan`` message; otherwise it publishes a
+  ``PointCloud2`` message.
 
 Practical tips and conventions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -259,6 +262,8 @@ map MJCF sensors to ROS topics.
 
 .. code-block:: xml
 
+.. code-block:: xml
+
    <!-- MuJoCo inputs embedded in URDF/xacro -->
    <mujoco_inputs>
      <raw_inputs>
@@ -266,14 +271,26 @@ map MJCF sensors to ROS topics.
        <actuator>
          <position name="joint1" joint="joint1" kp="1000"/>
        </actuator>
+
+       <!-- 2D lidar plugin -->
+       <extension>
+         <plugin plugin="mujoco.plugin.lidar">
+           <instance name="lidar">
+             <config key="resolution" value="24 1"/>
+             <config key="azimuth_range" value="-0.3 0.3"/>
+             <config key="elevation_range" value="0.0"/>
+             <config key="max_range" value="10.0"/>
+           </instance>
+         </plugin>
+       </extension>
+       <sensor>
+         <plugin name="lidar" instance="lidar" objtype="site" objname="lidar_frame"/>
+       </sensor>
      </raw_inputs>
 
      <processed_inputs>
        <!-- add a camera attached to the URDF frame 'camera_frame' -->
        <camera site="camera_frame" name="camera" fovy="58" mode="fixed" resolution="640 480"/>
-
-       <!-- generate a set of rangefinders attached to 'lidar_frame' -->
-       <lidar ref_site="lidar_frame" sensor_name="rf" min_angle="-0.3" max_angle="0.3" angle_increment="0.025"/>
      </processed_inputs>
    </mujoco_inputs>
 
@@ -286,15 +303,15 @@ map MJCF sensors to ROS topics.
        <param name="info_topic">/camera/color/camera_info</param>
      </sensor>
 
-     <!-- lidar sensor: base name must match processed_inputs 'sensor_name' -->
+     <!-- lidar sensor: name must match the MJCF sensor plugin 'name' -->
      <sensor name="lidar">
        <param name="frame_name">lidar_frame</param>
-       <param name="angle_increment">0.025</param>
-       <param name="min_angle">-0.3</param>
-       <param name="max_angle">0.3</param>
+       <param name="lidar_topic">/scan</param>
+       <param name="resolution">24 1</param>
+       <param name="azimuth_range">-0.3 0.3</param>
+       <param name="elevation_range">0.0</param>
        <param name="range_min">0.05</param>
        <param name="range_max">10.0</param>
-       <param name="laserscan_topic">/scan</param>
      </sensor>
    </ros2_control>
 
@@ -321,16 +338,6 @@ attributes the demo converter recognizes; converters may extend this list.
 - Optional: ``resolution`` (string) — two integers ``"<width> <height>"`` (example: ``640 480``).
 - Optional: any other args supported by the MJCF `camera tag <https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-camera>`_.
 - Notes: Converter fills transform (position + quaternion) from the URDF link pose.
-
-``lidar``
-
-- Required: ``ref_site`` (string) — URDF frame used as reference for placing rangefinders.
-- Required: ``sensor_name`` (string) — base name for generated MJCF rangefinders (e.g. ``rf`` will
-  produce ``rf-01``, ``rf-02``, ...). URDF ``sensor`` entries and ROS mapping should reference the same base name.
-- Required: ``min_angle`` (float) — start angle in radians.
-- Required: ``max_angle`` (float) — end angle in radians.
-- Required: ``angle_increment`` (float) — angular step between generated rangefinders.
-- Notes: The converter creates multiple MJCF ``rangefinder`` sensors across the angle range; the hardware interface merges them into a single ROS ``LaserScan``.
 
 ``modify_element``
 

@@ -32,7 +32,6 @@ from .urdf_to_mujoco_utils import (
     euler_to_quaternion,
     add_links_as_sites,
     add_cameras_from_sites,
-    add_lidar_from_sites,
     add_modifiers,
     copy_pre_generated_meshes,
     get_urdf_from_rsp,

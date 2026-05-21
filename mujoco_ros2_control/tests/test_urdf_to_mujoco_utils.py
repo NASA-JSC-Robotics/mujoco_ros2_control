@@ -41,7 +41,6 @@ from mujoco_ros2_control import (
     add_urdf_free_joint,
     get_xml_from_file,
     add_modifiers,
-    add_lidar_from_sites,
     add_cameras_from_sites,
     add_links_as_sites,
     get_urdf_transforms,
@@ -502,12 +501,11 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
 
     def test_get_processed_mujoco_inputs_none_element(self):
         result = get_processed_mujoco_inputs(None)
-        self.assertEqual(len(result), 4)
-        decompose_dict, cameras_dict, modify_element_dict, lidar_dict = result
+        self.assertEqual(len(result), 3)
+        decompose_dict, cameras_dict, modify_element_dict = result
         self.assertEqual(decompose_dict, {})
         self.assertEqual(cameras_dict, {})
         self.assertEqual(modify_element_dict, {})
-        self.assertEqual(lidar_dict, {})
 
     def test_get_processed_mujoco_inputs_decompose_mesh(self):
         xml_string = """<?xml version="1.0"?>
@@ -517,7 +515,7 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
         dom = minidom.parseString(xml_string)
         processed_element = dom.getElementsByTagName("processed_inputs")[0]
 
-        decompose_dict, cameras_dict, modify_element_dict, lidar_dict = get_processed_mujoco_inputs(processed_element)
+        decompose_dict, cameras_dict, modify_element_dict = get_processed_mujoco_inputs(processed_element)
         assert "test_mesh" in decompose_dict
         self.assertEqual(decompose_dict["test_mesh"], "0.03")
 
@@ -529,7 +527,11 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
         dom = minidom.parseString(xml_string)
         processed_element = dom.getElementsByTagName("processed_inputs")[0]
 
-        decompose_dict, cameras_dict, modify_element_dict, lidar_dict = get_processed_mujoco_inputs(processed_element)
+        (
+            decompose_dict,
+            cameras_dict,
+            modify_element_dict,
+        ) = get_processed_mujoco_inputs(processed_element)
         self.assertEqual(decompose_dict["test_mesh"], "0.05")
 
     def test_get_processed_mujoco_inputs_camera(self):
@@ -540,32 +542,9 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
         dom = minidom.parseString(xml_string)
         processed_element = dom.getElementsByTagName("processed_inputs")[0]
 
-        decompose_dict, cameras_dict, modify_element_dict, lidar_dict = get_processed_mujoco_inputs(processed_element)
+        decompose_dict, cameras_dict, modify_element_dict = get_processed_mujoco_inputs(processed_element)
         assert "camera_site" in cameras_dict
         self.assertEqual(cameras_dict["camera_site"].getAttribute("name"), "test_camera")
-
-    def test_get_processed_mujoco_inputs_lidar(self):
-        xml_string = """<?xml version="1.0"?>
-<processed_inputs>
-  <lidar ref_site="lidar_site" sensor_name="rf" min_angle="0" max_angle="1.57" angle_increment="0.025"/>
-</processed_inputs>"""
-        dom = minidom.parseString(xml_string)
-        processed_element = dom.getElementsByTagName("processed_inputs")[0]
-
-        decompose_dict, cameras_dict, modify_element_dict, lidar_dict = get_processed_mujoco_inputs(processed_element)
-        assert "lidar_site" in lidar_dict
-
-    def test_get_processed_mujoco_inputs_lidar_zero_angle_increment(self):
-        xml_string = """<?xml version="1.0"?>
-<processed_inputs>
-  <lidar ref_site="lidar_site" sensor_name="rf" min_angle="0" max_angle="1.57" angle_increment="0"/>
-</processed_inputs>"""
-        dom = minidom.parseString(xml_string)
-        processed_element = dom.getElementsByTagName("processed_inputs")[0]
-
-        with self.assertRaises(ValueError) as context:
-            get_processed_mujoco_inputs(processed_element)
-        assert "angle_increment" in str(context.exception)
 
     def test_get_processed_mujoco_inputs_modify_element(self):
         xml_string = """<?xml version="1.0"?>
@@ -575,7 +554,7 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
         dom = minidom.parseString(xml_string)
         processed_element = dom.getElementsByTagName("processed_inputs")[0]
 
-        decompose_dict, cameras_dict, modify_element_dict, lidar_dict = get_processed_mujoco_inputs(processed_element)
+        decompose_dict, cameras_dict, modify_element_dict = get_processed_mujoco_inputs(processed_element)
         key = ("body", "test_body")
         assert key in modify_element_dict
         self.assertEqual(modify_element_dict[key]["pos"], "1 2 3")
@@ -603,7 +582,7 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
         dom = minidom.parseString(xml_string)
         processed_element = dom.getElementsByTagName("processed_inputs")[0]
 
-        decompose_dict, cameras_dict, modify_element_dict, lidar_dict = get_processed_mujoco_inputs(processed_element)
+        decompose_dict, cameras_dict, modify_element_dict = get_processed_mujoco_inputs(processed_element)
         self.assertEqual(len(decompose_dict), 2)
         assert "mesh1" in decompose_dict
         assert "mesh2" in decompose_dict
@@ -954,69 +933,6 @@ class TestUrdfToMjcfUtils(unittest.TestCase):
         result_dom = add_modifiers(dom, {})
         result_xml = result_dom.toxml()
         self.assertEqual(result_xml, dom.toxml())
-
-    def test_add_lidar_from_sites_basic(self):
-        xml_string = """<?xml version="1.0"?>
-<mujoco>
-  <worldbody>
-    <body name="base">
-      <site name="lidar_site" pos="0 0 0.5" quat="1 0 0 0"/>
-    </body>
-  </worldbody>
-</mujoco>"""
-        dom = minidom.parseString(xml_string)
-        lidar_dict = {}
-        lidar_elem = minidom.parseString('<lidar name="lidar" url="file://sensor.xml"/>').documentElement
-        lidar_elem.setAttribute("min_angle", "0")
-        lidar_dict["lidar_site"] = lidar_elem
-
-        with patch("builtins.print"):
-            result_dom = add_lidar_from_sites(dom, lidar_dict)
-
-        result_xml = result_dom.toxml()
-        assert 'name="lidar_site_lidar_body"' in result_xml
-        assert "<lidar" in result_xml
-
-    def test_add_lidar_from_sites_no_matching_sites(self):
-        xml_string = """<?xml version="1.0"?>
-<mujoco>
-  <worldbody>
-    <body name="base">
-      <site name="camera_site" pos="0 0 0.5" quat="1 0 0 0"/>
-    </body>
-  </worldbody>
-</mujoco>"""
-        dom = minidom.parseString(xml_string)
-        lidar_dict = {}
-        lidar_elem = minidom.parseString('<lidar name="lidar"/>').documentElement
-        lidar_elem.setAttribute("min_angle", "0")
-        lidar_dict["other_site"] = lidar_elem
-
-        with self.assertRaises(ValueError) as context:
-            add_lidar_from_sites(dom, lidar_dict)
-        assert "other_site" in str(context.exception)
-
-    def test_add_lidar_from_sites_removes_min_angle(self):
-        xml_string = """<?xml version="1.0"?>
-<mujoco>
-  <worldbody>
-    <body name="base">
-      <site name="lidar_site" pos="0 0 0.5" quat="1 0 0 0"/>
-    </body>
-  </worldbody>
-</mujoco>"""
-        dom = minidom.parseString(xml_string)
-        lidar_dict = {}
-        lidar_elem = minidom.parseString('<lidar name="lidar" min_angle="0" max_angle="3.14"/>').documentElement
-        lidar_elem.setAttribute("min_angle", "0")
-        lidar_dict["lidar_site"] = lidar_elem
-
-        with patch("builtins.print"):
-            result_dom = add_lidar_from_sites(dom, lidar_dict)
-
-        result_xml = result_dom.toxml()
-        assert 'name="lidar"' in result_xml
-        assert 'max_angle="3.14"' in result_xml
 
     def test_add_cameras_from_sites_check_attributes(self):
         xml_string = """<?xml version="1.0"?>
