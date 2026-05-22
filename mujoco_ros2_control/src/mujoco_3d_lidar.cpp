@@ -355,9 +355,9 @@ void Mujoco3dLidar::update()
   // Step 2: Process and publish the appropriate type
   for (Lidar3dConfig& lidar : lidar_sensors_)
   {
-    // If the scan is stale skip publishing
+    // If the scan is invalide or stale skip publishing
     // TODO: Just remove this when this is reworked as a plugin
-    if (lidar.last_compute_time == lidar.last_published_time)
+    if (lidar.last_compute_time < 0.0 || lidar.last_compute_time == lidar.last_published_time)
     {
       continue;
     }
