@@ -40,11 +40,13 @@ target_link_libraries(
   glfw
 )
 
-# Install in the local package
-install(
-  TARGETS mujoco_plugin_lidar
+# Install in the local package, and export
+install(TARGETS mujoco_plugin_lidar
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib/${PROJECT_NAME}
+)
+install(TARGETS mujoco_plugin_lidar
+  LIBRARY DESTINATION lib/${PROJECT_NAME}/mujoco_plugin
 )
 
 # Duplicate the install to be next to the simulate application so this works there, as well.
@@ -55,6 +57,10 @@ if(mujoco_SIMULATE)
   cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
   install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
   install(TARGETS mujoco_plugin_lidar DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
+else()
+  message(STATUS "NO SIMULATE FOUND!"
+    "To use the lidar plugin with simulate, manually copy libmujoco_plugin_lidar.so "
+    "into ${mujoco_BIN_PATH}/mujoco_plugin/")
 endif()
 
 # Optionally export
