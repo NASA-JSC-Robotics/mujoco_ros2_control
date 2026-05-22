@@ -50,13 +50,19 @@ install(TARGETS mujoco_plugin_lidar
 )
 
 # Duplicate the install to be next to the simulate application so this works there, as well.
-# This will also ensure it is pulled in by mujoco_ros2_control when that executable is
-# compiled.
+# This is best effort because it may not be writeable...
 find_program(mujoco_SIMULATE NAMES simulate mujoco-simulate)
 if(mujoco_SIMULATE)
   cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
-  install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
-  install(TARGETS mujoco_plugin_lidar DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
+  install(CODE "
+    execute_process(
+      COMMAND cp -f \"\${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}/mujoco_plugin/libmujoco_plugin_lidar.so\"
+                    \"${mujoco_BIN_PATH}/mujoco_plugin/\"
+      RESULT_VARIABLE _err)
+    if(_err)
+      message(WARNING \"Could not install lidar plugin next to simulate! Manually copy it to ${mujoco_BIN_PATH}/mujoco_plugin/)
+    endif()
+  ")
 else()
   message(WARNING "NO SIMULATE FOUND!"
     "To use the lidar plugin with simulate, manually copy libmujoco_plugin_lidar.so "
@@ -67,11 +73,7 @@ endif()
 if(ament_cmake_FOUND)
   # Register this package as a mujoco_plugin provider in the ament resource index.
   # The marker file contains the relative path to the plugin directory.
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/mujoco_plugin_marker"
-    "lib/${PROJECT_NAME}/mujoco_plugin")
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/mujoco_plugin_marker"
-    DESTINATION share/ament_index/resource_index/mujoco_plugins
-    RENAME ${PROJECT_NAME})
+  ament_index_register_resource(mujoco_plugins CONTENT "lib/${PROJECT_NAME}/mujoco_plugin")
 
   ament_export_targets(export_${PROJECT_NAME})
   ament_export_dependencies(mujoco_vendor)
