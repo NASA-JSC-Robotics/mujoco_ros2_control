@@ -60,7 +60,7 @@ if(mujoco_SIMULATE)
                     \"${mujoco_BIN_PATH}/mujoco_plugin/\"
       RESULT_VARIABLE _err)
     if(_err)
-      message(WARNING \"Could not install lidar plugin next to simulate! Manually copy it to ${mujoco_BIN_PATH}/mujoco_plugin/)
+      message(WARNING \"Could not install lidar plugin next to simulate! Manually copy it to ${mujoco_BIN_PATH}/mujoco_plugin/\")
     endif()
   ")
 else()
