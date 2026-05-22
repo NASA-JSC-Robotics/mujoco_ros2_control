@@ -45,8 +45,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include "lodepng.h"
 
-#include <ament_index_cpp/get_resources.hpp>
 #include <ament_index_cpp/get_resource.hpp>
+#include <ament_index_cpp/get_resources.hpp>
 
 #define ROS_DISTRO_HUMBLE (HARDWARE_INTERFACE_VERSION_MAJOR < 3)
 
