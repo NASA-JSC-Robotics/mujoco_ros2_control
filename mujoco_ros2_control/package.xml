@@ -45,6 +45,7 @@
   <exec_depend>urdfdom_py</exec_depend>
   <exec_depend>python3-venv</exec_depend>
   <exec_depend>python3-pip</exec_depend>
+  <exec_depend>mujoco_3d_lidar</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
