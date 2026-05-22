@@ -38,7 +38,7 @@ namespace mujoco::plugin::lidar
 //  4. (double) Vertical field-of-view (fov_y), in degrees.
 //  5. (double) Maximum range, in m.
 //  6. (double) Minimum range, in m (optional, defaults to 0).
-//  7. (double) Rate at which to update sensor readings, in seconds (optional, defaults to 0).
+//  7. (double) Rate at which to update sensor readings, in Hz (optional, defaults to 0).
 
 class Lidar
 {

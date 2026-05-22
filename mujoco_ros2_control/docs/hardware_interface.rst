@@ -315,7 +315,7 @@ Define the plugin instance and attach it to a site in your MJCF:
          <config key="elevation_range" value="0.0"/>
          <config key="max_range" value="10.0"/>
          <config key="min_range" value="0.0"/>
-         <config key="update_rate" value="0.1"/>
+         <config key="update_rate" value="10.0"/>
        </instance>
      </plugin>
    </extension>
@@ -353,12 +353,12 @@ Plugin parameters:
 - ``elevation_range``: min and max elevation angles in radians, or a single value for 2D
 - ``max_range``: maximum ray distance; hits beyond this are reported as -1
 - ``min_range``: minimum ray distance; hits below this are reported as -1
-- ``update_rate``: The time between successive scans, in seconds.
+- ``update_rate``: The rate at which to run scans, in Hz.
 
 Of note, the ``update_rate`` is configurable at the plugin level to save on computation cost when stepping the simulation.
 Importantly, ``lidar_publish_rate`` in the ros2_control xacro is the rate at which the hardware interface will check if a new scan has been completed.
 The publishers will NOT publish stale data.
-If no ``update_rate`` is provided the plugin will trigger every timestep in the simulation.
+If no ``update_rate`` is provided the plugin will trigger every timestep in the simulation (this can be costly).
 
 ros2_control Xacro
 ~~~~~~~~~~~~~~~~~~
