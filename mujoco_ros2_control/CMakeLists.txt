@@ -146,24 +146,6 @@ else()
   )
 endif()
 
-# Find all of the plugins defined next to the simulate executable and ensure the are available to the
-# mujoco ros2 control node by doing some copying... This includes both mujoco default plugins as well
-# as included plugins.
-find_program(mujoco_SIMULATE NAMES simulate mujoco-simulate)
-if(mujoco_SIMULATE)
-  cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
-  install(DIRECTORY "${mujoco_BIN_PATH}/mujoco_plugin/"
-    DESTINATION lib/${PROJECT_NAME}/mujoco_plugin
-    FILES_MATCHING PATTERN "*.so")
-endif()
-find_package(mujoco_3d_lidar QUIET)
-if(mujoco_3d_lidar_FOUND)
-  get_filename_component(_lidar_prefix "${mujoco_3d_lidar_DIR}/../../.." ABSOLUTE)
-  install(DIRECTORY "${_lidar_prefix}/lib/mujoco_3d_lidar/mujoco_plugin/"
-    DESTINATION lib/${PROJECT_NAME}/mujoco_plugin
-    FILES_MATCHING PATTERN "*.so")
-endif()
-
 # MuJoCo ROS 2 control system interface (this package)
 add_library(mujoco_ros2_control SHARED
     src/mujoco_simulation.cpp
