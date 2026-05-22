@@ -58,13 +58,21 @@ if(mujoco_SIMULATE)
   install(DIRECTORY DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
   install(TARGETS mujoco_plugin_lidar DESTINATION ${mujoco_BIN_PATH}/mujoco_plugin)
 else()
-  message(STATUS "NO SIMULATE FOUND!"
+  message(WARNING "NO SIMULATE FOUND!"
     "To use the lidar plugin with simulate, manually copy libmujoco_plugin_lidar.so "
     "into ${mujoco_BIN_PATH}/mujoco_plugin/")
 endif()
 
 # Optionally export
 if(ament_cmake_FOUND)
+  # Register this package as a mujoco_plugin provider in the ament resource index.
+  # The marker file contains the relative path to the plugin directory.
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/mujoco_plugin_marker"
+    "lib/${PROJECT_NAME}/mujoco_plugin")
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/mujoco_plugin_marker"
+    DESTINATION share/ament_index/resource_index/mujoco_plugins
+    RENAME ${PROJECT_NAME})
+
   ament_export_targets(export_${PROJECT_NAME})
   ament_export_dependencies(mujoco_vendor)
   ament_package()
