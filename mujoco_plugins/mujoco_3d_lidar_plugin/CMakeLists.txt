@@ -5,40 +5,15 @@ find_package(ament_cmake QUIET)
 # Link MuJoCo via the vendor package
 find_package(mujoco_vendor REQUIRED)
 
-# We don't care about warnings from the external sources
-set(mujoco_SILENCE_COMPILER_WARNINGS
-  -Wno-missing-field-initializers
-  -Wno-unused-parameter
-  -Wno-sign-compare
-  -Wno-psabi
-)
-
-set(SRCS
-    src/register.cpp
-    src/3dlidar.cpp
-)
-
 include_directories(include)
 
 add_library(mujoco_plugin_lidar SHARED)
-target_sources(mujoco_plugin_lidar PRIVATE ${SRCS})
+target_sources(mujoco_plugin_lidar PRIVATE
+  src/register.cpp
+  src/3dlidar.cpp
+)
 target_link_libraries(mujoco_plugin_lidar PRIVATE mujoco::mujoco)
 target_compile_options(mujoco_plugin_lidar PRIVATE ${mujoco_SILENCE_COMPILER_WARNINGS})
-
-add_executable(list_plugins test/list_plugins.cpp)
-target_compile_options(list_plugins PRIVATE ${mujoco_SILENCE_COMPILER_WARNINGS})
-target_link_libraries(
-  list_plugins PRIVATE
-  mujoco::mujoco
-)
-
-add_executable(load_model test/load_model.cpp)
-target_compile_options(load_model PRIVATE ${mujoco_SILENCE_COMPILER_WARNINGS})
-target_link_libraries(
-  load_model PRIVATE
-  mujoco::mujoco
-  glfw
-)
 
 # Install in the local package, and export
 install(TARGETS mujoco_plugin_lidar
@@ -51,6 +26,7 @@ install(TARGETS mujoco_plugin_lidar
 
 # Duplicate the install to be next to the simulate application so this works there, as well.
 # This is best effort because it may not be writeable...
+# TODO: Have mujoco_vendor support a writeable plugin directory
 find_program(mujoco_SIMULATE NAMES simulate mujoco-simulate)
 if(mujoco_SIMULATE)
   cmake_path(SET mujoco_BIN_PATH NORMALIZE ${mujoco_SIMULATE}/..)
