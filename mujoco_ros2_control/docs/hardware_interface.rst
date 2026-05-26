@@ -42,10 +42,11 @@ Specify it in your URDF and point to a valid MJCF on launch:
             Defaults to 5 Hz. -->
        <param name="camera_publish_rate">6.0</param>
 
-       <!-- Optional: Add a maximum lidar scan publish rate of 10 Hz -->
+       <!-- Optional: Run checks for updated lidar scans at 10 Hz. -->
        <!-- Note that the underlying mujoco plugins have their own update rate, and stale messages -->
-       <!-- will not be published! -->
-       <param name="lidar_publish_rate">10.0</param>
+       <!-- will not be published! This parameter sets the loop rate to check all lidar plugin ->>
+       <!-- objects for new scans, or the upper limit on the rate that scans will be published. -->
+       <param name="lidar_update_rate">10.0</param>
 
        <!-- Optional: run the simulator without a GUI window. Defaults to false. -->
        <param name="headless">false</param>
@@ -356,7 +357,7 @@ Plugin parameters:
 - ``update_rate``: The rate at which to run scans, in Hz.
 
 Of note, the ``update_rate`` is configurable at the plugin level to save on computation cost when stepping the simulation.
-Importantly, ``lidar_publish_rate`` in the ros2_control xacro is the rate at which the hardware interface will check if a new scan has been completed.
+Importantly, ``lidar_update_rate`` in the ros2_control xacro is the rate at which the hardware interface will check if a new scan has been completed.
 The publishers will NOT publish stale data.
 If no ``update_rate`` is provided the plugin will trigger every timestep in the simulation (this can be costly).
 

@@ -150,12 +150,12 @@ std::optional<Lidar3dConfig> get_lidar_config(const hardware_interface::Hardware
 }
 
 Mujoco3dLidar::Mujoco3dLidar(rclcpp::Node::SharedPtr node, std::recursive_mutex* sim_mutex, mjData* mujoco_data,
-                             mjModel* mujoco_model, double lidar_publish_rate)
+                             mjModel* mujoco_model, double lidar_update_rate)
   : node_(node)
   , sim_mutex_(sim_mutex)
   , mj_data_(mujoco_data)
   , mj_model_(mujoco_model)
-  , lidar_publish_rate_(lidar_publish_rate)
+  , lidar_update_rate_(lidar_update_rate)
 {
 }
 
@@ -280,7 +280,7 @@ bool Mujoco3dLidar::register_lidars(const hardware_interface::HardwareInfo& hard
       lidar_config.laser_scan_msg.range_max = static_cast<float>(lidar_config.range_max);
       lidar_config.laser_scan_msg.ranges.resize(lidar_config.resolution[0] * lidar_config.resolution[1]);
       lidar_config.laser_scan_msg.intensities.resize(0);
-      lidar_config.laser_scan_msg.scan_time = 1.0f / static_cast<float>(lidar_publish_rate_);
+      lidar_config.laser_scan_msg.scan_time = 1.0f / static_cast<float>(lidar_update_rate_);
 
       lidar_config.scan_pub = node_->create_publisher<sensor_msgs::msg::LaserScan>(lidar_config.lidar_topic, 1);
     }
@@ -327,9 +327,9 @@ void Mujoco3dLidar::close()
 
 void Mujoco3dLidar::update_loop()
 {
-  RCLCPP_INFO(node_->get_logger(), "Starting the lidar processing loop, publishing at %f Hz", lidar_publish_rate_);
+  RCLCPP_INFO(node_->get_logger(), "Starting the lidar processing loop, updating at %f Hz", lidar_update_rate_);
 
-  rclcpp::Rate rate(lidar_publish_rate_);
+  rclcpp::Rate rate(lidar_update_rate_);
   while (rclcpp::ok() && publish_lidar_)
   {
     update();

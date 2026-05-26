@@ -81,10 +81,10 @@ public:
    * @param sim_mutex Provides synchronized access to the mujoco_data object for grabbing rangefinder data
    * @param mujoco_data MuJoCo data for the simulation
    * @param mujoco_model MuJoCo model for the simulation
-   * @param lidar_publish_rate The rate to publish lidar messages (either PointClouds or LaserScans).
+   * @param lidar_update_rate Update rate to check for new lidar scans from the underlying data
    */
   explicit Mujoco3dLidar(rclcpp::Node::SharedPtr node, std::recursive_mutex* sim_mutex, mjData* mujoco_data,
-                         mjModel* mujoco_model, double lidar_publish_rate);
+                         mjModel* mujoco_model, double lidar_update_rate);
 
   /**
    * @brief Starts the lidar processing thread in the background.
@@ -125,8 +125,8 @@ private:
   // Vector container to copy sensordata out of mj_data_
   std::vector<mjtNum> mj_lidar_data_;
 
-  // LaserScan publishing rate in Hz
-  double lidar_publish_rate_;
+  // The rate at which to check for updated lidar scans
+  double lidar_update_rate_;
 
   // Containers for ladar data and ROS constructs
   std::vector<Lidar3dConfig> lidar_sensors_;

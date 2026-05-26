@@ -325,9 +325,9 @@ MujocoSystemInterface::on_init(const hardware_interface::HardwareComponentInterf
   // Pull the camera publish rate out of the info, if present, otherwise default to 5 hz.
   const auto camera_publish_rate =
       std::stod(get_hardware_parameter(get_hardware_info(), "camera_publish_rate").value_or("5.0"));
-  // Pull the lidar publish rate out of the info, if present, otherwise default to 5 hz.
-  const auto lidar_publish_rate =
-      std::stod(get_hardware_parameter(get_hardware_info(), "lidar_publish_rate").value_or("5.0"));
+  // Pull the lidar update rate out of the info, if present, otherwise default to 5 hz.
+  const auto lidar_update_rate =
+      std::stod(get_hardware_parameter(get_hardware_info(), "lidar_update_rate").value_or("5.0"));
 
   // Check for headless mode
   const bool headless =
@@ -484,7 +484,7 @@ MujocoSystemInterface::on_init(const hardware_interface::HardwareComponentInterf
   // Configure Lidar sensors
   RCLCPP_INFO(get_logger(), "Initializing lidar...");
   lidar_3d_sensors_ = std::make_unique<Mujoco3dLidar>(get_node(), &simulation_->mutex(), simulation_->data(),
-                                                      simulation_->model(), lidar_publish_rate);
+                                                      simulation_->model(), lidar_update_rate);
   if (!lidar_3d_sensors_->register_lidars(get_hardware_info()))
   {
     RCLCPP_INFO(get_logger(), "No 3d lidar sensor found");
