@@ -49,6 +49,12 @@
 
 using namespace std::chrono_literals;
 
+std::vector<double> p_error_last_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+std::vector<double> last_exp = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+std::vector<double> mjc_p_gains = {2000.0, 2000.0, 4000.0, 1000.0, 1000.0, 1000.0};
+std::vector<double> mjc_d_gains = {200.0, 200.0, 400.0, 100.0, 100.0, 100.0};
+std::vector<double> mjc_u_max = {330.0, 330.0, 150.0, 56.0, 56.0, 56.0};
+
 namespace
 {
 std::optional<std::string> get_hardware_parameter(const hardware_interface::HardwareInfo& hardware_info,
@@ -929,6 +935,22 @@ hardware_interface::return_type MujocoSystemInterface::write(const rclcpp::Time&
 #endif
   };
 
+  std::string ctrls = "";
+  std::string errors = "";
+  int i = 0;
+  bool thresh = false;
+  bool rt = false;
+  double exp_ctrl;
+  bool any_pid = false;
+
+  for (auto& actuator : mujoco_actuator_data_)
+  {
+    if (actuator.is_position_pid_control_enabled)
+    {
+      any_pid = true;
+    }
+  }
+
   // Update control data based on the latest readings
   for (auto& actuator : mujoco_actuator_data_)
   {
@@ -939,11 +961,56 @@ hardware_interface::return_type MujocoSystemInterface::write(const rclcpp::Time&
     if (actuator.is_position_control_enabled)
     {
       mj_data_control_->ctrl[actuator.mj_actuator_id] = actuator.position_interface.command_;
+      if (i > 1 && i < 8 && !any_pid){
+        // Check that newly stepped joint torque matches last expected ctrl
+        ctrls += std::to_string(mj_data_control_->qfrc_actuator[actuator.mj_vel_adr]) + " ";
+        if (std::abs(mj_data_control_->qfrc_actuator[actuator.mj_vel_adr]) >= mjc_u_max[i-2] / 1.5) {
+          thresh = true;
+        }
+        double ratio = std::abs(mj_data_control_->qfrc_actuator[actuator.mj_vel_adr]) / std::abs(last_exp[i-2]);
+        if (last_exp[i-2] > 0.2 && last_exp[i-2] <= mjc_u_max[i-2] && (ratio <= 0.95 || ratio >= 1.05)) {
+          rt = true;
+          RCLCPP_ERROR(get_logger(), 
+                          "Expected control is %s.",
+                          std::to_string(last_exp[i-2]).c_str());
+          RCLCPP_ERROR(get_logger(),
+                            "Actual control is %s.",
+                            std::to_string(mj_data_control_->qfrc_actuator[actuator.mj_vel_adr]).c_str());
+        }
+
+        errors += std::to_string(p_error_last_[i-2]) + " ";
+
+        // Calculate new error and expected control
+        const double error = actuator.position_interface.command_ - mj_data_control_->qpos[actuator.mj_pos_adr];
+        p_error_last_[i-2] = error;
+        exp_ctrl = mjc_p_gains[i-2] * error - mjc_d_gains[i-2] * (mj_data_control_->qvel[actuator.mj_pos_adr]) / period.seconds();
+        last_exp[i-2] = exp_ctrl;
+      }
     }
     else if (actuator.is_position_pid_control_enabled)
     {
       const double error = actuator.position_interface.command_ - mj_data_control_->qpos[actuator.mj_pos_adr];
+
+      control_toolbox::Pid::Gains gains = actuator.pos_pid->get_gains();
+      exp_ctrl = gains.p_gain_ * error + gains.d_gain_ * (error - p_error_last_[i]) / period.seconds();
+      p_error_last_[i] = error;
       mj_data_control_->ctrl[actuator.mj_actuator_id] = pid_compute_command(actuator.pos_pid, error, period);
+      ctrls += std::to_string(mj_data_control_->ctrl[actuator.mj_actuator_id]) + " ";
+      if (std::abs(mj_data_control_->ctrl[actuator.mj_actuator_id]) >= gains.u_max_ / 1.5) {
+        thresh = true;
+      }
+      double ratio = std::abs(mj_data_control_->ctrl[actuator.mj_actuator_id]) / std::abs(exp_ctrl);
+      if (exp_ctrl > 0.01 && exp_ctrl <= gains.u_max_ && (ratio <= 0.95 || ratio >= 1.05)) {
+        rt = true;
+        RCLCPP_ERROR_THROTTLE(get_logger(), *get_node()->get_clock(), 1,
+                          "Expected control is %s.",
+                          std::to_string(exp_ctrl).c_str());
+        RCLCPP_ERROR_THROTTLE(get_logger(), *get_node()->get_clock(), 1,
+                            "Actual control is %s.",
+                            std::to_string(mj_data_control_->ctrl[actuator.mj_actuator_id]).c_str());   
+        
+      }
+      errors += std::to_string(error) + " ";
     }
     else if (actuator.is_velocity_control_enabled)
     {
@@ -958,6 +1025,19 @@ hardware_interface::return_type MujocoSystemInterface::write(const rclcpp::Time&
     {
       mj_data_control_->ctrl[actuator.mj_actuator_id] = actuator.effort_interface.command_;
     }
+    i += 1;
+    if (rt){
+      thresh = true;
+      rt = false;
+    }
+  }
+  if (thresh) {
+    RCLCPP_ERROR(get_logger(), 
+                          "Errors are %s.",
+                          errors.c_str());
+    RCLCPP_ERROR(get_logger(), 
+                          "Controls are %s.",
+                          ctrls.c_str());
   }
 
   // Update plugins.
