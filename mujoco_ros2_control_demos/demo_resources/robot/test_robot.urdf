@@ -327,7 +327,7 @@
       <!-- <param name="override_start_position_file">$(find mujoco_ros2_control_demos)/config/start_positions.xml</param> -->
 
       <!-- Override the slowdown settings in the Simulate App and run at 3x speed -->
-      <param name="sim_speed_factor">1.0</param>
+      <param name="sim_speed_factor">1.4</param>
 
       <!-- Uncomment to start the simulation at a specific keyframe defined in the MJCF -->
       <!-- <param name="initial_keyframe">start_90</param> -->
