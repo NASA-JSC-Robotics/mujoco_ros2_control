@@ -409,6 +409,112 @@ BaseVelocity Parameters
    (parameter ``odom_free_joint_name``, default topic ``/simulator/floating_base_state``) — this
    plugin only drives the base, it does not publish odometry.
 
+ContactPublisherPlugin
+~~~~~~~~~~~~~~~~~~~~~~
+
+Publishes which MuJoCo bodies are currently colliding, optionally restricted to a set of
+participating bodies. Useful for self-collision monitoring, for asserting on contact in tests, or
+for reacting to a robot bumping into its environment.
+
+.. list-table::
+   :widths: 25 75
+   :header-rows: 0
+
+   * - **Topic**
+     - ``contact_pairs`` (``mujoco_ros2_control_msgs/msg/ContactPairArray``), configurable via
+       the ``topic`` parameter
+
+Contact aggregation
+^^^^^^^^^^^^^^^^^^^
+
+MuJoCo reports contacts per *geom* pair, and a single pair of touching bodies usually produces
+several of them (a box resting on the floor generates one contact per corner). The plugin
+aggregates all contacts between the same two bodies into a **single** ``ContactPair`` entry that
+carries ``num_contacts`` (how many MuJoCo contact points back the pair) and ``min_distance`` (the
+deepest of those contacts; negative means the geoms overlap). Each pair is reported once, with
+``body_names``/``body_ids`` ordered by ascending body id, so ``a``-vs-``b`` and ``b``-vs-``a``
+never show up as two entries.
+
+Bodies collide with the static environment through the world body, which is reported under its
+MuJoCo name, ``world``. Contacts involving a flex participant are skipped: they carry no geom,
+and therefore no owning body that could be named.
+
+A message is published every cycle regardless of whether anything is colliding — an empty
+``contact_pairs`` array is the positive statement that the participating bodies are currently
+clear.
+
+Participating bodies
+^^^^^^^^^^^^^^^^^^^^
+
+``body_names`` lists the bodies that take part in collision reporting. A contact is published
+only when **both** of its bodies are listed; anything left out of the list is free to collide
+with whatever it likes. Leaving the list empty (the default) makes every body in the model
+participate, which publishes every colliding pair.
+
+This makes the common monitoring setup a single enumeration: list the robot's links and the
+parts of the environment that must not be hit, and omit everything the robot is *supposed* to
+touch. Self-collisions come out of the same list for free, since both robot links are on it.
+
+.. code-block:: yaml
+
+   body_names:
+     - base_link          # robot links: self-collisions among these are reported...
+     - link_1
+     - link_2
+     - wall               # ...as are collisions with these environment bodies
+     - table
+   # doors, conveyors and manipulated props are simply not listed, so contacts
+   # involving them never appear, whatever they touch.
+
+Because a contact needs both ends listed, a list with a single body can never match anything;
+the plugin logs a warning at startup in that case. An unknown body name fails plugin
+initialization rather than being silently ignored.
+
+ContactPublisher Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :widths: 25 15 15 45
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Default
+     - Description
+   * - ``body_names``
+     - ``string[]``
+     - ``[]``
+     - Names of the MuJoCo bodies that participate in collision reporting; a contact is published
+       only when both of its bodies are listed. Empty means every body in the model participates.
+       An unknown name here fails plugin initialization.
+   * - ``topic``
+     - ``string``
+     - ``contact_pairs``
+     - Output topic name.
+   * - ``publish_rate``
+     - ``double``
+     - ``50.0``
+     - Publish frequency in Hz.
+
+**Example configuration**
+
+.. code-block:: yaml
+
+   /**:
+     ros__parameters:
+       mujoco_plugins:
+         contact_publisher:
+           type: "mujoco_ros2_control_plugins/ContactPublisherPlugin"
+           body_names: ["link_1", "link_2", "wall"]   # empty = every body in the model
+           topic: "contact_pairs"
+           publish_rate: 50.0
+
+**Example: monitoring collisions**
+
+.. code-block:: bash
+
+   ros2 topic echo /mujoco_ros2_control_node/contact_publisher/contact_pairs
+
 FreeJointStatePublisherPlugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -29,6 +29,17 @@
       Multiple concurrent wrenches on different or the same bodies are supported.
     </description>
   </class>
+  <class name="mujoco_ros2_control_plugins/ContactPublisherPlugin"
+         type="mujoco_ros2_control_plugins::ContactPublisherPlugin"
+         base_class_type="mujoco_ros2_control_plugins::MuJoCoROS2ControlPluginBase">
+    <description>
+      Publishes the pairs of MuJoCo bodies that are currently colliding, as
+      mujoco_ros2_control_msgs/msg/ContactPairArray. The body_names parameter lists the bodies
+      that participate: a contact is published only when both of its bodies are listed, so any
+      body left out is free to collide with anything. All contacts between the same two bodies
+      are aggregated into one entry carrying the contact count and the deepest penetration.
+    </description>
+  </class>
   <class name="mujoco_ros2_control_plugins/FreeJointStatePublisherPlugin"
          type="mujoco_ros2_control_plugins::FreeJointStatePublisherPlugin"
          base_class_type="mujoco_ros2_control_plugins::MuJoCoROS2ControlPluginBase">

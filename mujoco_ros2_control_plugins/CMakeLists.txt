@@ -48,6 +48,7 @@ target_link_libraries(mujoco_ros2_control_plugins INTERFACE
 add_library(mujoco_ros2_control_plugins_impl SHARED
   src/heartbeat_publisher_plugin.cpp
   src/external_wrench_plugin.cpp
+  src/contact_publisher_plugin.cpp
   src/base_velocity_plugin.cpp
   src/free_joint_state_publisher_plugin.cpp
   src/camera_plugin.cpp
@@ -125,6 +126,22 @@ if(BUILD_TESTING)
     ${mujoco_ros2_control_msgs_TARGETS}
   )
   target_link_options(test_free_joint_state_publisher_plugin PUBLIC
+    "LINKER:--push-state,--no-as-needed"
+    "$<TARGET_LINKER_FILE:tinyxml2::tinyxml2>"
+    "LINKER:--pop-state"
+  )
+
+  ament_add_gtest(test_contact_publisher_plugin
+    test/test_contact_publisher_plugin.cpp
+  )
+  target_include_directories(test_contact_publisher_plugin PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+  )
+  target_link_libraries(test_contact_publisher_plugin
+    mujoco_ros2_control_plugins_impl
+    ${mujoco_ros2_control_msgs_TARGETS}
+  )
+  target_link_options(test_contact_publisher_plugin PUBLIC
     "LINKER:--push-state,--no-as-needed"
     "$<TARGET_LINKER_FILE:tinyxml2::tinyxml2>"
     "LINKER:--pop-state"

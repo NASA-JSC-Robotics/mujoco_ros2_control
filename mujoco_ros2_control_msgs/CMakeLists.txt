@@ -11,6 +11,8 @@ find_package(rosidl_default_generators REQUIRED)
 
 
 set(msg_files
+  msg/ContactPair.msg
+  msg/ContactPairArray.msg
   msg/ExternalWrench.msg
   msg/ExternalWrenchArray.msg
   msg/FreeJointState.msg

@@ -16,6 +16,7 @@ Full documentation is maintained in RST format:
 | `CameraPlugin` | Publishes MuJoCo RGB-D camera color/depth/info to ROS 2 topics |
 | `ExternalWrenchPlugin` | Applies external wrenches to MuJoCo bodies via a ROS 2 service |
 | `BaseVelocityPlugin` | Drives a mobile/floating-base robot from a `cmd_vel`-style topic via a direct free-joint velocity override, independent of wheel-ground contact |
+| `ContactPublisherPlugin` | Publishes the MuJoCo body pairs that are currently colliding, optionally filtered to a set of bodies |
 | `FreeJointStatePublisherPlugin` | Publishes the pose/velocity of free-joint bodies to a topic, in a selectable reference frame |
 | `Mujoco3dLidarPlugin` | Republishes MuJoCo lidar-extension sensor data as `LaserScan`/`PointCloud2` messages |
 | `RangefinderLidarPlugin` | **[Deprecated]** Wraps MuJoCo rangefinder sensors as `LaserScan` publishers |
