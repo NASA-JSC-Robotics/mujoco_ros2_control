@@ -103,6 +103,11 @@ bool FtsGravCompPlugin::register_fts(const mjModel* model)
     const int sensor_dim_force = model->sensor_dim[sensor_id_force];
     const int sensor_dim_torque = model->sensor_dim[sensor_id_torque];
 
+    if (cog_pos_param.size() != 3)
+    {
+        RCLCPP_ERROR(logger_, "CoG.pos should be of exactly size 3 representing x, y, z coordinates");
+    }
+
     if ((sensor_dim_force != 3) || (sensor_dim_torque != 3))
     {
       RCLCPP_ERROR(logger_,
