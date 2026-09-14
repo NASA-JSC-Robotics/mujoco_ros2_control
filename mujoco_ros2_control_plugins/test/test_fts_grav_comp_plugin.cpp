@@ -185,7 +185,7 @@ protected:
     setParam("or_fts_sensor.CoG.mass", double{ 10.0 });
   }
 
-  std::vector<double> get_ft_data(mujoco_ros2_control_plugins::FtsData fts)
+  std::vector<double> get_ft_data(mujoco_ros2_control_plugins::FTsData fts)
   {
     std::vector<double> ft_data(6, 0);
     const mjtNum* sensordata_force = data_->sensordata + fts.sensor_adr_force;
