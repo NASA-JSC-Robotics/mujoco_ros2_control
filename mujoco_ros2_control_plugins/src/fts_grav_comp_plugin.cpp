@@ -123,7 +123,7 @@ bool FtsGravCompPlugin::register_fts(const mjModel* model)
       return false;
     }
 
-    FtsData fts_data;
+    FTsData fts_data;
     fts_data.sensor_name = sensor_name;
     fts_data.sensor_adr_force = model->sensor_adr[sensor_id_force];
     fts_data.sensor_adr_torque = model->sensor_adr[sensor_id_torque];
