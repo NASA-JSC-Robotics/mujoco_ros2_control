@@ -540,27 +540,17 @@ See the example configuration below for more details.
          fts_grav_comp_plugin:
            type: "mujoco_ros2_control_plugins/FtsGravCompPlugin"
            # name of the sensor to modify. Note that mujoco sensors will look
-           # like 'tcp_fts_sensor_force' and 'tcp_fts_sensor_torque'
-           force_torque_sensor_1:
+           # like 'fts_sensor_force' and 'fts_sensor_torque'
+           fts_sensor:
              # mujoco site the CoG is represented in
-             frame_id: fts_frame_1
+             frame_id: ft_sensor_site
              # specifies the center of gravity w.r.t the 'frame_id' parameter
              CoG:
                pos:
-                 - 0.0 # x in m
+                 - 0.1 # x in m
                  - 0.0 # y in m
-                 - 0.05 # z in m
-               mass: 2.0 # mass in kg
-           force_torque_sensor_2:
-             # mujoco site the CoG is represented in
-             frame_id: fts_frame_2
-             # specifies the center of gravity w.r.t the 'frame_id' parameter
-             CoG:
-               pos:
-                 - 0.025 # x in m
-                 - 0.3 # y in m
-                 - 0.01 # z in m
-               mass: 5.0 # mass in kg
+                 - 0.0 # z in m
+               mass: 10.0 # mass in kg
 
 .. _rangefinder_lidar_plugin:
 
