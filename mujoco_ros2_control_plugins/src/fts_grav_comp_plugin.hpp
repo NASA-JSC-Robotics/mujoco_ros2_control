@@ -32,7 +32,7 @@ namespace mujoco_ros2_control_plugins
  *
  * One instance exists per FTS registered by FtsGravCompPlugin::register_fts().
  */
-struct FTsData
+struct FtsData
 {
   // sensor name of FTS. Mujoco should have sensors <sensor_name>_force and <sensor_name>_torque
   std::string sensor_name;
@@ -88,7 +88,7 @@ public:
   /**
    * @brief getter for fts data used for testing
    */
-  std::vector<FTsData> get_fts_data() const
+  std::vector<FtsData> get_fts_data() const
   {
     return fts_;
   }
@@ -97,7 +97,7 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_ = rclcpp::get_logger("FtsGravCompPlugin");
 
-  std::vector<FTsData> fts_;
+  std::vector<FtsData> fts_;
 };
 
 }  // namespace mujoco_ros2_control_plugins
