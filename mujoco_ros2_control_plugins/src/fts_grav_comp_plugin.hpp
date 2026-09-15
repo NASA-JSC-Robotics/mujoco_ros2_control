@@ -40,7 +40,7 @@ struct FTsData
   int sensor_adr_force{ -1 };
   int sensor_adr_torque{ -1 };
   // site id of the site used for center of gravity reference
-  int cog_site_id;
+  int cog_site_id{ -1 };
   // array of doubles of the center of gravity w.r.t. cog_site_it in meters for [x, y, z]
   mjtNum cog_pos[3];
   // mass that is being compensated in kg
