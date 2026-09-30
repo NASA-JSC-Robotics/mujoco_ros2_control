@@ -730,10 +730,6 @@ bool MujocoSimulation::initialize(rclcpp::Node::SharedPtr node, const std::strin
       publish_control_state();
     }
 
-    // Re-implemention AlignAndScaleView from simulate.cc which doesn't run if you load your model from a topic.
-    // If this isn't included, the model will load at a default 0 camera position regardless of the camera
-    // properties that are set for your model. This is basically what happens when you click Align in Simulate.
-
     // if there is an id set in the global settings, use that as the initial fixed camera
     if (mj_model_->vis.global.cameraid >= 0 && mj_model_->vis.global.cameraid < mj_model_->ncam)
     {
