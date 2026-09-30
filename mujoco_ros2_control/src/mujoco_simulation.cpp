@@ -735,13 +735,15 @@ bool MujocoSimulation::initialize(rclcpp::Node::SharedPtr node, const std::strin
     // properties that are set for your model. This is basically what happens when you click Align in Simulate.
 
     // if there is an id set in the global settings, use that as the initial fixed camera
-    if (mj_model_->vis.global.cameraid >= 0 && mj_model_->vis.global.cameraid < mj_model_->ncam) {
+    if (mj_model_->vis.global.cameraid >= 0 && mj_model_->vis.global.cameraid < mj_model_->ncam)
+    {
       sim_->cam.fixedcamid = mj_model_->vis.global.cameraid;
-      sim_->cam.type       = mjCAMERA_FIXED;
+      sim_->cam.type = mjCAMERA_FIXED;
     }
 
     // otherwise use default free camera
-    else {
+    else
+    {
       mjv_defaultFreeCamera(mj_model_, &sim_->cam);
     }
   }
