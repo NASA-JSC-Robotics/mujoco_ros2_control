@@ -794,6 +794,17 @@ void MujocoSimulation::set_pre_step_callback(PreStepCallback callback)
   pre_step_callback_ = std::move(next);
 }
 
+void MujocoSimulation::set_post_step_callback(PostStepCallback callback)
+{
+  // Don't drop in a nullptr if requested, just pass an empty function.
+  PostStepCallback next = callback ? std::move(callback) : PostStepCallback([](mjData* /*data*/) {});
+
+  // Plugins may be registered after the physics thread is already running, so the loop
+  // could otherwise be reading post_step_callback_ while we assign to it.
+  const std::unique_lock<std::recursive_mutex> lock(*sim_mutex_);
+  post_step_callback_ = std::move(next);
+}
+
 void MujocoSimulation::start_physics_thread()
 {
   // Disable the rangefinder flag at startup so that we don't get the yellow lines.
@@ -1519,6 +1530,7 @@ void MujocoSimulation::physics_loop()
             pre_step_callback_(mj_data_);
             // run single step, let next iteration deal with timing
             mj_step(mj_model_, mj_data_);
+            post_step_callback_(mj_data_);
 
             // Publish the per-step control state before the clock tick,
             // so consumers woken by this tick read state synchronous with that sim time.
@@ -1571,6 +1583,7 @@ void MujocoSimulation::physics_loop()
               pre_step_callback_(mj_data_);
               // call mj_step
               mj_step(mj_model_, mj_data_);
+              post_step_callback_(mj_data_);
 
               // Publish the per-step control state before the clock tick (see above)
               publish_control_state();
@@ -1628,6 +1641,7 @@ void MujocoSimulation::physics_loop()
           {
             pre_step_callback_(mj_data_);
             mj_step(mj_model_, mj_data_);
+            post_step_callback_(mj_data_);
             publish_control_state();
             publish_clock();
 

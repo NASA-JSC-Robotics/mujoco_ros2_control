@@ -259,6 +259,7 @@ MujocoSystemInterface::~MujocoSystemInterface()
   if (simulation_)
   {
     simulation_->set_pre_step_callback(nullptr);
+    simulation_->set_post_step_callback(nullptr);
   }
 
   // Stop plugins
@@ -2491,6 +2492,14 @@ void MujocoSystemInterface::load_mujoco_plugins()
     for (auto& plugin : plugin_instances_)
     {
       plugin->pre_step(data);
+    }
+  });
+
+  // Connect plugin post-step callbacks directly to the physics simulation.
+  simulation_->set_post_step_callback([this](mjData* data) {
+    for (auto& plugin : plugin_instances_)
+    {
+      plugin->post_step(data);
     }
   });
 }

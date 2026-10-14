@@ -299,6 +299,30 @@ TEST_F(MujocoSimulationTest, PreStepCallbackAppliesXfrcApplied)
   EXPECT_DOUBLE_EQ(sim_->data()->xfrc_applied[body_id * 6 + 2], 3.0);
 }
 
+TEST_F(MujocoSimulationTest, PostStepCallbackSeesStepResult)
+{
+  ASSERT_TRUE(initialize_sim());
+
+  // A post-step callback runs on the live mjData immediately after mj_step(), so it should see
+  // non-zero sim time (i.e. the step has already happened) and its writes should survive until
+  // the next step (unlike pre_step, which gets overwritten by the step that immediately follows).
+  const size_t body_id = 1;
+  std::atomic<bool> saw_post_step_time{ false };
+  sim_->set_post_step_callback([this, body_id, &saw_post_step_time](mjData* data) {
+    if (data->time > 0.0)
+    {
+      saw_post_step_time.store(true);
+    }
+    data->xfrc_applied[body_id * 6 + 0] = 4.0;
+  });
+
+  sim_->start_physics_thread();
+  EXPECT_TRUE(wait_until([&saw_post_step_time]() { return saw_post_step_time.load(); }))
+      << "post_step callback never observed a stepped sim time";
+  EXPECT_TRUE(wait_until([this, body_id]() { return sim_->data()->xfrc_applied[body_id * 6 + 0] == 4.0; }))
+      << "post_step callback's xfrc_applied write was not retained after the step";
+}
+
 TEST_F(MujocoSimulationTest, PauseStepUnpause)
 {
   ASSERT_TRUE(initialize_sim());

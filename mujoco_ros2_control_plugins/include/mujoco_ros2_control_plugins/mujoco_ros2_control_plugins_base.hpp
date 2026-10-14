@@ -27,16 +27,23 @@ namespace mujoco_ros2_control_plugins
  * Plugins extend mujoco_ros2_control with custom behavior, e.g. publishing extra topics or
  * applying external forces.
  *
- * Three optional hooks are available. Override whichever fits your use case:
+ * Four optional hooks are available. Override whichever fits your use case:
  *
  * - `update()` runs on the ros2_control control thread, once per `write()` cycle. `data` is a
- *   recent snapshot, not the live `mj_data_`. Use this for anything that doesn't need to run on
- *   exactly one physics step, e.g. publishing sensor data or servicing a trigger.
+ *   recent snapshot, not the live `mj_data_`, and writes to it (other than `ctrl`/`qfrc_applied`)
+ *   are discarded. Use this for anything that doesn't need to run on exactly one physics step,
+ *   e.g. publishing sensor data or servicing a trigger.
  * - `pre_step()` runs on the physics thread, immediately before every `mj_step()`, with direct
  *   access to the live `mj_data_`. Use this for anything that must hold for exactly one step,
  *   e.g. a hard kinematic override. There's no command buffer: an untouched entry keeps its
  *   last value, so releasing a command (e.g. an expired force) needs an explicit write. This
  *   should be used with caution!
+ * - `post_step()` runs on the physics thread, immediately after every `mj_step()` and before the
+ *   resulting state (including `sensordata`) is snapshotted for ros2_control to read. Use this
+ *   for anything that must post-process the results of a step before ros2_control sees them,
+ *   e.g. gravity-compensating a force/torque sensor reading. Mutations made here are not
+ *   overwritten by MuJoCo until the next `mj_step()`, unlike mutations made in `pre_step()`.
+ *   Use with caution, same as `pre_step()`.
  * - `on_reset()` runs immediately after a world reset, with the live `mj_data_` in its
  *   post-reset state. Use this to clear plugin state that refers to the pre-reset world,
  *   e.g. a latched command.
@@ -77,6 +84,18 @@ public:
    * @param data Pointer to the live MuJoCo data, can be modified as needed.
    */
   virtual void pre_step(mjData* /*data*/)
+  {
+  }
+
+  /**
+   * @brief Called immediately after every simulation step on the physics thread, before the
+   * resulting state is snapshotted for ros2_control. Default does nothing.
+   *
+   * USE WITH CAUTION.
+   *
+   * @param data Pointer to the live MuJoCo data, can be modified as needed.
+   */
+  virtual void post_step(mjData* /*data*/)
   {
   }
 

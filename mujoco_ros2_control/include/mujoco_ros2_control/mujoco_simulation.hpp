@@ -124,6 +124,12 @@ inline std::chrono::microseconds physics_loop_sleep_duration(double timestep)
  * environment and can break, slow down, or otherwise damage the simulation. This should also
  * be used with caution.
  *
+ * `set_post_step_callback(...)` registers a callback which will be triggered in the Physics
+ * Loop immediately after `mj_step()`, before the resulting `mj_data_` (including `sensordata`)
+ * is snapshotted for ros2_control to read. Use this to post-process the results of a step, e.g.
+ * gravity-compensating a sensor reading, before it reaches ros2_control. Same caution as
+ * `set_pre_step_callback(...)` applies.
+ *
  * Thread safety is still somewhat messy, as callers are provided with a simulation mutex that
  * locks the model and data while the actual mujoco engine moves the sim forward. Callers
  * need to be wary of locking that mutex external to this class, as it can have significant
@@ -153,6 +159,16 @@ public:
    * @param data The data from the physics simulation, under thread lock.
    */
   using PreStepCallback = std::function<void(mjData* data)>;
+
+  /**
+   * @brief Callback function type for the `set_post_step_callback` hook.
+   *
+   * Called after `mjStep` in the physics loop, before the resulting state is snapshotted for
+   * ros2_control to read. Use with care.
+   *
+   * @param data The data from the physics simulation, under thread lock.
+   */
+  using PostStepCallback = std::function<void(mjData* data)>;
 
   /**
    * @brief Construct a new Mujoco Simulation object. This is a no-op until initialization.
@@ -198,6 +214,15 @@ public:
    * the simulation mutex and block the physics loop. Use with care.
    */
   void set_pre_step_callback(PreStepCallback callback);
+
+  /**
+   * @brief Register the callback run after every `mj_step()`, before the resulting state is
+   * snapshotted for ros2_control.
+   *
+   * See the class documentation for more information. Any function called here will hold
+   * the simulation mutex and block the physics loop. Use with care.
+   */
+  void set_post_step_callback(PostStepCallback callback);
 
   /**
    * @brief Start the physics thread. Must be called after load_model().
@@ -606,6 +631,10 @@ private:
 
   // Callback run immediately before every mj_step(), defaults to nothing.
   PreStepCallback pre_step_callback_{ [](mjData* /*data*/) {} };
+
+  // Callback run immediately after every mj_step(), before publish_control_state() snapshots
+  // the result. Defaults to nothing.
+  PostStepCallback post_step_callback_{ [](mjData* /*data*/) {} };
 };
 
 }  // namespace mujoco_ros2_control
