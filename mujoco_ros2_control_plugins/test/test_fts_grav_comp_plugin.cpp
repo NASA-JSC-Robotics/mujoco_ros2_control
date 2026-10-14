@@ -263,7 +263,7 @@ TEST_F(FtsGravCompPluginTest, GravityIsComped)
 
   mujoco_ros2_control_plugins::FtsGravCompPlugin plugin;
   ASSERT_TRUE(plugin.init(plugin_node_, model_, data_));
-  plugin.update(model_, data_);
+  plugin.post_step(data_);
 
   // expected that the FT data should be 0 after gravity compensation
   std::vector<double> expected_data = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
@@ -297,7 +297,7 @@ TEST_F(FtsGravCompPluginTest, GravityIsNotComped)
   setParam("or_fts_sensor.CoG.mass", double{ 0.0 });
   mujoco_ros2_control_plugins::FtsGravCompPlugin plugin;
   ASSERT_TRUE(plugin.init(plugin_node_, model_, data_));
-  plugin.update(model_, data_);
+  plugin.post_step(data_);
 
   // force FTS 0 (negative z direction)
   // mass * gravity
@@ -345,7 +345,7 @@ TEST_F(FtsGravCompPluginTest, GravityIsCompedWithFrameIdDifferentFromSensorId)
 
   mujoco_ros2_control_plugins::FtsGravCompPlugin plugin;
   ASSERT_TRUE(plugin.init(plugin_node_, model_, data_));
-  plugin.update(model_, data_);
+  plugin.post_step(data_);
 
   // expected that the FT data should be 0 after gravity compensation
   std::vector<double> expected_data = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };

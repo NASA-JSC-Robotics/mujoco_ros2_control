@@ -76,9 +76,10 @@ public:
   bool init(rclcpp::Node::SharedPtr node, const mjModel* model, mjData* data) override;
 
   /**
-   * @brief Update the plugin (called every simulation step)
+   * @brief Apply gravity compensation after every simulation step, before ros2_control reads
+   * the result. See MuJoCoROS2ControlPluginBase::post_step() for timing details.
    */
-  void update(const mjModel* model, mjData* data) override;
+  void post_step(mjData* data) override;
 
   /**
    * @brief Cleanup the plugin
@@ -96,6 +97,8 @@ public:
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_ = rclcpp::get_logger("FtsGravCompPlugin");
+
+  mjtNum gravity_[3];
 
   std::vector<FtsData> fts_;
 };

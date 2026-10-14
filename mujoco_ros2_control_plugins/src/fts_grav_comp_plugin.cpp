@@ -67,6 +67,8 @@ std::vector<std::string> FtsGravCompPlugin::get_sensor_names_from_parameters()
 
 bool FtsGravCompPlugin::register_fts(const mjModel* model)
 {
+  mju_copy3(gravity_, model->opt.gravity);
+
   const auto sensor_names = get_sensor_names_from_parameters();
 
   const std::string param_prefix = "mujoco_plugins." + node_->get_sub_namespace() + ".";
@@ -165,7 +167,7 @@ bool FtsGravCompPlugin::init(rclcpp::Node::SharedPtr node, const mjModel* model,
   return true;
 }
 
-void FtsGravCompPlugin::update(const mjModel* model, mjData* data)
+void FtsGravCompPlugin::post_step(mjData* data)
 {
   // run gravity compensation for each force torque sensor
   for (auto& fts : fts_)
@@ -198,7 +200,7 @@ void FtsGravCompPlugin::update(const mjModel* model, mjData* data)
     mjtNum gravity_in_fts_frame[3];
     mjtNum weight_in_fts_frame[3];
     mjtNum weight_torque_in_fts_frame[3];
-    mju_mulMatTVec3(gravity_in_fts_frame, data->site_xmat + 9 * fts.fts_site_id, model->opt.gravity);
+    mju_mulMatTVec3(gravity_in_fts_frame, data->site_xmat + 9 * fts.fts_site_id, gravity_);
     mju_scl3(weight_in_fts_frame, gravity_in_fts_frame, fts.cog_mass);
 
     // Step 3 - subtract out forces and torques due to weight of the end effector
